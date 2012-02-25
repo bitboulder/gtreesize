@@ -39,56 +39,51 @@ namespace Treesize {
 		}
 	}
 
+	public delegate void CheckFunc();
+	public class Queue {
+		private GLib.HashTable<FileNode,bool> hst=new GLib.HashTable<FileNode,bool>(null,null);
+		private GLib.List<FileNode> lst=new GLib.List<FileNode>();
+		private CheckFunc check;
+		public Queue(CheckFunc _check){ check=_check; }
+		public void insert(FileNode fn){ if(!hst.lookup_extended(fn,null,null)){ hst.insert(fn,true); lst.append(fn); check(); } }
+		public bool empty(){ return hst.size()==0; }
+		public bool pop(out FileNode fn){
+			if(empty()) return false;
+			fn=lst.first().data;
+			lst.remove_link(lst.first());
+			hst.remove(fn);
+			return true;
+		}
+	}
+
 	public class FileTree : Gtk.TreeStore {
 		private FileNode[] roots;
-		private GLib.HashTable<FileNode,bool> upddpl;
-		private GLib.HashTable<FileNode,bool> updfile;
+		public Queue upddpl;
+		public Queue updfile;
+		private bool updateon=false;
 		private time_t lastupd=0;
 		public FileTree(string[] args){
+			upddpl=new Queue(updcheck);
+			updfile=new Queue(updcheck);
 			set_column_types(new GLib.Type[9] {typeof(string),typeof(int),typeof(string),typeof(int64),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string)});
 			set_sort_column_id(3,Gtk.SortType.DESCENDING);
 			roots=new FileNode[args.length-1];
-			upddpl=new GLib.HashTable<FileNode,bool>(null,null);
-			updfile=new GLib.HashTable<FileNode,bool>(null,null);
 			for(int i=1;i<args.length;i++)
-				addfile(roots[i-1]=new FileNode(args[i],this));
+				updfile.insert(roots[i-1]=new FileNode(args[i],this));
 		}
 
 		public bool update(){
 			time_t t=time_t();
 			bool tchg=t!=lastupd;
 			lastupd=t;
-			if(upddpl.size()>0 && (updfile.size()==0 || tchg)){
-				var hti=GLib.HashTableIter<FileNode,bool>(upddpl);
-				FileNode fn; bool b;
-				while(hti.next(out fn,out b)){
-					hti.remove();
-					fn.upddpl();
-				}
-				return true;
-			}
-			if(updfile.size()>0){
-				var hti=GLib.HashTableIter<FileNode,bool>(updfile);
-				FileNode fn; bool b;
-				if(hti.next(out fn,out b)){
-					hti.remove();
-					fn.updfile();
-					return true;
-				}
-			}
-			return updfile.size()>0 || upddpl.size()>0;
+			FileNode fn;
+			if(!upddpl.empty() && (updfile.empty() || tchg)){
+				while(upddpl.pop(out fn)) fn.upddpl();
+			}else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
+			return updateon=!(updfile.empty() && upddpl.empty());
 		}
 
-		public void adddpl(FileNode fn){
-			bool on=upddpl.size()==0;
-			upddpl.insert(fn,true);
-			if(on) GLib.Idle.add(update);
-		}
-		public void addfile(FileNode fn){
-			bool on=updfile.size()==0;
-			updfile.insert(fn,true);
-			if(on) GLib.Idle.add(update);
-		}
+		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
 	}
 
 	public class FileNode {
@@ -115,9 +110,9 @@ namespace Treesize {
 		}
 		private void updssi(int64 chg){
 			ssi+=chg;
-			foreach(var fc in ch.get_values()) ft.adddpl(fc);
+			foreach(var fc in ch.get_values()) ft.upddpl.insert(fc);
 			if(pa!=null) pa.updssi(chg);
-			else ft.adddpl(this);
+			else ft.upddpl.insert(this);
 		}
 		public void upddpl(){ ft.set(it,0,rndsi(ssi),1,pa!=null?(pa.ssi==0?0:ssi*100/pa.ssi):100,3,ssi); }
 		private string rndsi(int64 _si){
@@ -152,14 +147,14 @@ namespace Treesize {
 					while((fich=en.next_file())!=null){
 						FileNode fn;
 						if(!ch.lookup_extended(fich.get_name(),null,out fn))
-							ft.addfile(fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this));
+							ft.updfile.insert(fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this));
 						nch.insert(fich.get_name(),fn);
 					}
 					ch=nch;
 				}
 				var fm=fi.monitor(FileMonitorFlags.NONE); /* TODO: monitor_directory */
 				fm.changed.connect((file,otherfile,evtype)=>{
-					ft.addfile(this);
+					ft.updfile.insert(this);
 				});
 			}catch(Error e){
 				nsi=0;
