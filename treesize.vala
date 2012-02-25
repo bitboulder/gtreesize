@@ -9,23 +9,20 @@ namespace Treesize {
 	}
 	public class Treesize : Gtk.Window {
 		public Treesize(string[] args){
-			// TreeStore
-			var tm=new FileTree(args);
 			// CellRenderer
 			var trs=new Gtk.CellRendererText();
 			var trp=new Gtk.CellRendererProgress();
 			var trf=new Gtk.CellRendererText();
-			// TreeViewColumn
 			var tc=new Gtk.TreeViewColumn();
-			tc.pack_start(trs,false);
-			tc.add_attribute(trs,"text",0);
-			tc.pack_start(trp,false);
-			tc.add_attribute(trp,"value",1);
-			tc.pack_start(trf,false);
-			tc.add_attribute(trf,"text",2);
+			tc.set_title("File");
+			tc.pack_start(trs,false); tc.add_attribute(trs,"text",0);
+			tc.pack_start(trp,false); tc.add_attribute(trp,"value",1);
+			tc.pack_start(trf,false); tc.add_attribute(trf,"text",2);
 			// TreeView
+			var tm=new FileTree(args);
 			var tv=new Gtk.TreeView.with_model(tm);
 			tv.append_column(tc);
+			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Owner",new Gtk.CellRendererText(),"text",4));
 			// ScrolledWindow
 			var sc=new Gtk.ScrolledWindow(null,null);
 			sc.add_with_viewport(tv);
@@ -33,8 +30,8 @@ namespace Treesize {
 			add(sc);
 			set_default_size(500,700);
 			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
+			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			show_all();
-			tm.loaddata();
 		}
 	}
 
@@ -44,17 +41,13 @@ namespace Treesize {
 		private GLib.HashTable<FileNode,bool> updfile;
 		private time_t lastupd=0;
 		public FileTree(string[] args){
-			set_column_types(new GLib.Type[4] {typeof(string),typeof(int),typeof(string),typeof(int64)});
+			set_column_types(new GLib.Type[5] {typeof(string),typeof(int),typeof(string),typeof(int64),typeof(string)});
 			set_sort_column_id(3,Gtk.SortType.DESCENDING);
 			roots=new FileNode[args.length-1];
 			upddpl=new GLib.HashTable<FileNode,bool>(null,null);
 			updfile=new GLib.HashTable<FileNode,bool>(null,null);
 			for(int i=1;i<args.length;i++)
-				roots[i-1]=new FileNode(args[i],this);
-		}
-
-		public void loaddata(){
-			for(int i=0;i<roots.length;i++) addfile(roots[i]);
+				addfile(roots[i-1]=new FileNode(args[i],this));
 		}
 
 		public bool update(){
@@ -151,7 +144,7 @@ namespace Treesize {
 					}
 					ch=nch;
 				}
-				var fm=fi.monitor(FileMonitorFlags.NONE);
+				var fm=fi.monitor(FileMonitorFlags.NONE); /* TODO: monitor_directory */
 				fm.changed.connect((file,otherfile,evtype)=>{
 					ft.addfile(this);
 				});
