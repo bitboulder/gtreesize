@@ -16,9 +16,9 @@ namespace Treesize {
 			var trf=new Gtk.CellRendererText();
 			var tc=new Gtk.TreeViewColumn();
 			tc.set_title("File");
-			tc.pack_start(trs,false); tc.add_attribute(trs,"text",0);
-			tc.pack_start(trp,false); tc.add_attribute(trp,"value",1);
-			tc.pack_start(trf,false); tc.add_attribute(trf,"text",2);
+			tc.pack_start(trs,false); tc.add_attribute(trs,"text",1);
+			tc.pack_start(trp,false); tc.add_attribute(trp,"value",2);
+			tc.pack_start(trf,false); tc.add_attribute(trf,"text",3);
 			// TreeView
 			var tm=new FileTree(args);
 			var tv=new Gtk.TreeView.with_model(tm);
@@ -32,12 +32,14 @@ namespace Treesize {
 			var sc=new Gtk.ScrolledWindow(null,null);
 			sc.add_with_viewport(tv);
 			// Menu
+			var fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
+				Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL,Gtk.STOCK_ADD,Gtk.ResponseType.ACCEPT);
 			mu_one_sel=new GLib.List<Gtk.MenuItem>();
 			var mu=new Gtk.Menu();
 			createmi(Gtk.STOCK_OPEN,mu,mu_one_sel).activate.connect(()=>{ stdout.printf("HALLO\n"); });
 			createmi(Gtk.STOCK_DELETE,mu,mu_one_sel).activate.connect(()=>{ stdout.printf("HALLO\n"); });
 			mu.append(new Gtk.SeparatorMenuItem());
-			createmi(Gtk.STOCK_ADD,mu,null).activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			createmi(Gtk.STOCK_ADD,mu,null).activate.connect(()=>{ tm.seldir(fc); });
 			createmi(Gtk.STOCK_QUIT,mu,null).activate.connect(()=>{ Gtk.main_quit(); });
 			stdout.printf("%u\n",mu_one_sel.length());
 			mu.show_all();
@@ -50,6 +52,7 @@ namespace Treesize {
 			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
 			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			show_all();
+			if(args.length<2) tm.seldir(fc);
 		}
 		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu,GLib.List<Gtk.MenuItem>? list){
 			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);
@@ -83,7 +86,6 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore {
-		private FileNode[] roots;
 		public Queue upddpl;
 		public Queue updfile;
 		private bool updateon=false;
@@ -91,13 +93,17 @@ namespace Treesize {
 		public FileTree(string[] args){
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
-			set_column_types(new GLib.Type[9] {typeof(string),typeof(int),typeof(string),typeof(int64),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string)});
-			set_sort_column_id(3,Gtk.SortType.DESCENDING);
-			roots=new FileNode[args.length-1];
-			for(int i=1;i<args.length;i++)
-				updfile.insert(roots[i-1]=new FileNode(args[i],this));
+			set_column_types(new GLib.Type[9] {typeof(int64),typeof(string),typeof(int),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string)});
+			set_sort_column_id(0,Gtk.SortType.DESCENDING);
+			for(int i=1;i<args.length;i++) adddir(args[i]);
 		}
-
+		public void seldir(Gtk.FileChooserDialog fc){
+			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename());
+			fc.hide();
+		}
+		private void adddir(string dirname){
+			updfile.insert(new FileNode(dirname,this));
+		}
 		public bool update(){
 			time_t t=time_t();
 			bool tchg=t!=lastupd;
@@ -126,7 +132,7 @@ namespace Treesize {
 			pa=_pa;
 			if(pa==null) ft.append(out it,null);
 			else ft.append(out it,pa.it);
-			ft.set(it,2,fi.get_basename());
+			ft.set(it,3,fi.get_basename());
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 			upddpl();
 		}
@@ -140,7 +146,7 @@ namespace Treesize {
 			if(pa!=null) pa.updssi(chg);
 			else ft.upddpl.insert(this);
 		}
-		public void upddpl(){ ft.set(it,0,rndsi(ssi),1,pa!=null?(pa.ssi==0?0:ssi*100/pa.ssi):100,3,ssi); }
+		public void upddpl(){ ft.set(it,0,ssi,1,rndsi(ssi),2,pa!=null?(pa.ssi==0?0:ssi*100/pa.ssi):100); }
 		private string rndsi(int64 _si){
 			if(_si==0) return "0";
 			string ext[5]={"k","M","G","T"};
