@@ -8,6 +8,7 @@ namespace Treesize {
 		return 0;
 	}
 	public class Treesize : Gtk.Window {
+		GLib.List<Gtk.MenuItem> mu_one_sel;
 		public Treesize(string[] args){
 			// CellRenderer
 			var trs=new Gtk.CellRendererText();
@@ -30,12 +31,37 @@ namespace Treesize {
 			// ScrolledWindow
 			var sc=new Gtk.ScrolledWindow(null,null);
 			sc.add_with_viewport(tv);
+			// Menu
+			mu_one_sel=new GLib.List<Gtk.MenuItem>();
+			var mu=new Gtk.Menu();
+			createmi(Gtk.STOCK_OPEN,mu,mu_one_sel).activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			createmi(Gtk.STOCK_DELETE,mu,mu_one_sel).activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			mu.append(new Gtk.SeparatorMenuItem());
+			createmi(Gtk.STOCK_ADD,mu,null).activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			createmi(Gtk.STOCK_QUIT,mu,null).activate.connect(()=>{ Gtk.main_quit(); });
+			stdout.printf("%u\n",mu_one_sel.length());
+			mu.show_all();
+			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
+			tv.get_selection().changed.connect(on_sel_chg);
+			on_sel_chg(tv.get_selection());
 			// Window
 			add(sc);
 			set_default_size(500,700);
 			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
 			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			show_all();
+		}
+		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu,GLib.List<Gtk.MenuItem>? list){
+			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);
+			mu.append(mi);
+			if(list!=null) list.prepend(mi);
+			stdout.printf("%u %u\n",mu_one_sel.length(),list==null?1000:list.length());
+			return mi;
+		}
+		private void on_sel_chg(Gtk.TreeSelection s){
+			int n=s.count_selected_rows();
+			stdout.printf("%u\n",mu_one_sel.length());
+			foreach(var i in mu_one_sel) i.sensitive=(n==1);
 		}
 	}
 
