@@ -36,12 +36,11 @@ namespace Treesize {
 				Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL,Gtk.STOCK_ADD,Gtk.ResponseType.ACCEPT);
 			mu_one_sel=new GLib.List<Gtk.MenuItem>();
 			var mu=new Gtk.Menu();
-			createmi(Gtk.STOCK_OPEN,mu,mu_one_sel).activate.connect(()=>{ stdout.printf("HALLO\n"); });
-			createmi(Gtk.STOCK_DELETE,mu,mu_one_sel).activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			mu_one_sel.prepend(createmi(Gtk.STOCK_OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			mu_one_sel.prepend(createmi(Gtk.STOCK_DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ stdout.printf("HALLO\n"); });
 			mu.append(new Gtk.SeparatorMenuItem());
-			createmi(Gtk.STOCK_ADD,mu,null).activate.connect(()=>{ tm.seldir(fc); });
-			createmi(Gtk.STOCK_QUIT,mu,null).activate.connect(()=>{ Gtk.main_quit(); });
-			stdout.printf("%u\n",mu_one_sel.length());
+			createmi(Gtk.STOCK_ADD,mu).activate.connect(()=>{ tm.seldir(fc); });
+			createmi(Gtk.STOCK_QUIT,mu).activate.connect(Gtk.main_quit);
 			mu.show_all();
 			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
 			tv.get_selection().changed.connect(on_sel_chg);
@@ -54,16 +53,13 @@ namespace Treesize {
 			show_all();
 			if(args.length<2) tm.seldir(fc);
 		}
-		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu,GLib.List<Gtk.MenuItem>? list){
+		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu){
 			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);
 			mu.append(mi);
-			if(list!=null) list.prepend(mi);
-			stdout.printf("%u %u\n",mu_one_sel.length(),list==null?1000:list.length());
 			return mi;
 		}
 		private void on_sel_chg(Gtk.TreeSelection s){
 			int n=s.count_selected_rows();
-			stdout.printf("%u\n",mu_one_sel.length());
 			foreach(var i in mu_one_sel) i.sensitive=(n==1);
 		}
 	}
