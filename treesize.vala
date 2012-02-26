@@ -153,8 +153,17 @@ namespace Treesize {
 			int num=si<10?1:0;
 			return ("%."+num.to_string()+"f"+ext[ei]).printf(si);
 		}
-		private string rndtime(TimeVal time){ return time.to_iso8601(); }
-		private string rndmode(uint mode){ return "%c%c%c%c%c%c%c%c%c".printf('r','w','x','r','w','x','r','w','x'); }
+		private string rndtime(TimeVal time){ return Time.local(time.tv_sec).format("%x %H:%M"); }
+		private string rndmode(uint mode){
+			bool us=(mode>>11)%2==1;
+			bool gs=(mode>>10)%2==1;
+			bool ot=(mode>>9)%2==1;
+			return "%c%c%c%c%c%c%c%c%c".printf(
+				(mode>>8)%2==1?'r':'-',(mode>>7)%2==1?'w':'-',(mode>>6)%2==1?(us?'s':'x'):(us?'S':'-'),
+				(mode>>5)%2==1?'r':'-',(mode>>4)%2==1?'w':'-',(mode>>3)%2==1?(gs?'s':'x'):(gs?'S':'-'),
+				(mode>>2)%2==1?'r':'-',(mode>>1)%2==1?'w':'-',(mode>>0)%2==1?(ot?'t':'x'):(ot?'T':'-')
+			);
+		}
 		public void updfile(){
 			int64 nsi=0;
 			try{
