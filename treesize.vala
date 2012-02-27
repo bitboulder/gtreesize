@@ -8,7 +8,8 @@ namespace Treesize {
 		return 0;
 	}
 	public class Treesize : Gtk.Window {
-		GLib.List<Gtk.MenuItem> mu_one_sel;
+		private GLib.List<Gtk.MenuItem> mu_one_sel;
+		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
 		public Treesize(string[] args){
 			// CellRenderer
 			var trs=new Gtk.CellRendererText();
@@ -16,18 +17,25 @@ namespace Treesize {
 			var trf=new Gtk.CellRendererText();
 			var tc=new Gtk.TreeViewColumn();
 			tc.set_title("File");
-			tc.pack_start(trs,false); tc.add_attribute(trs,"text",1);
-			tc.pack_start(trp,false); tc.add_attribute(trp,"value",2);
-			tc.pack_start(trf,false); tc.add_attribute(trf,"text",3);
+			tc.pack_start(trs,false); tc.add_attribute(trs,"text",2);
+			tc.pack_start(trp,false); tc.add_attribute(trp,"value",3);
+			tc.pack_start(trf,false); tc.add_attribute(trf,"text",4);
 			// TreeView
 			var tm=new FileTree(args);
 			var tv=new Gtk.TreeView.with_model(tm);
 			tv.append_column(tc);
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("MTime",new Gtk.CellRendererText(),"text",4));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Mode",new Gtk.CellRendererText(),"text",5));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Owner",new Gtk.CellRendererText(),"text",6));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Group",new Gtk.CellRendererText(),"text",7));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Size",new Gtk.CellRendererText(),"text",8));
+			tv.append_column(new Gtk.TreeViewColumn.with_attributes("MTime",new Gtk.CellRendererText(),"text",5));
+			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Mode",new Gtk.CellRendererText(),"text",6));
+			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Owner",new Gtk.CellRendererText(),"text",7));
+			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Group",new Gtk.CellRendererText(),"text",8));
+			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Size",new Gtk.CellRendererText(),"text",9));
+			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
+			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{
+				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
+				string fn; tm.get(iter,0,out fn);
+				uchar[] data=(uchar[])fn.to_utf8(); data.length++;
+				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
+			});
 			// ScrolledWindow
 			var sc=new Gtk.ScrolledWindow(null,null);
 			sc.add_with_viewport(tv);
@@ -36,8 +44,8 @@ namespace Treesize {
 				Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL,Gtk.STOCK_ADD,Gtk.ResponseType.ACCEPT);
 			mu_one_sel=new GLib.List<Gtk.MenuItem>();
 			var mu=new Gtk.Menu();
-			mu_one_sel.prepend(createmi(Gtk.STOCK_OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ stdout.printf("HALLO\n"); });
-			mu_one_sel.prepend(createmi(Gtk.STOCK_DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ stdout.printf("HALLO\n"); });
+			mu_one_sel.prepend(createmi(Gtk.STOCK_OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
+			mu_one_sel.prepend(createmi(Gtk.STOCK_DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
 			mu.append(new Gtk.SeparatorMenuItem());
 			createmi(Gtk.STOCK_ADD,mu).activate.connect(()=>{ tm.seldir(fc); });
 			createmi(Gtk.STOCK_QUIT,mu).activate.connect(Gtk.main_quit);
@@ -89,17 +97,15 @@ namespace Treesize {
 		public FileTree(string[] args){
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
-			set_column_types(new GLib.Type[9] {typeof(int64),typeof(string),typeof(int),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string)});
-			set_sort_column_id(0,Gtk.SortType.DESCENDING);
+			set_column_types(new GLib.Type[10] {typeof(string),typeof(int64),typeof(string),typeof(int),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string)});
+			set_sort_column_id(1,Gtk.SortType.DESCENDING);
 			for(int i=1;i<args.length;i++) adddir(args[i]);
 		}
 		public void seldir(Gtk.FileChooserDialog fc){
 			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename());
 			fc.hide();
 		}
-		private void adddir(string dirname){
-			updfile.insert(new FileNode(dirname,this));
-		}
+		private void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
 		public bool update(){
 			time_t t=time_t();
 			bool tchg=t!=lastupd;
@@ -110,8 +116,14 @@ namespace Treesize {
 			}else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
 			return updateon=!(updfile.empty() && upddpl.empty());
 		}
-
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
+		public void runcmd(string _cmd,Gtk.TreeSelection s){
+			Gtk.TreeIter iter;
+			string fn;
+			s.get_selected(null,out iter);
+			get(iter,0,out fn);
+			Posix.system(_cmd+" \""+fn+"\""+"\n");
+		}
 	}
 
 	public class FileNode {
@@ -128,7 +140,7 @@ namespace Treesize {
 			pa=_pa;
 			if(pa==null) ft.append(out it,null);
 			else ft.append(out it,pa.it);
-			ft.set(it,3,fi.get_basename());
+			ft.set(it,0,_fn,4,fi.get_basename());
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 			upddpl();
 		}
@@ -142,7 +154,7 @@ namespace Treesize {
 			if(pa!=null) pa.updssi(chg);
 			else ft.upddpl.insert(this);
 		}
-		public void upddpl(){ ft.set(it,0,ssi,1,rndsi(ssi),2,pa!=null?(pa.ssi==0?0:ssi*100/pa.ssi):100); }
+		public void upddpl(){ ft.set(it,1,ssi,2,rndsi(ssi),3,pa!=null?(pa.ssi==0?0:ssi*100/pa.ssi):100); }
 		private string rndsi(int64 _si){
 			if(_si==0) return "0";
 			string ext[5]={"k","M","G","T"};
@@ -172,11 +184,11 @@ namespace Treesize {
 				nsi=(int64)i.get_attribute_uint64(FILE_ATTRIBUTE_STANDARD_ALLOCATED_SIZE);
 				TimeVal mtime;
 				i.get_modification_time(out mtime);
-				ft.set(it,4,rndtime(mtime));
-				ft.set(it,5,rndmode(i.get_attribute_uint32(FILE_ATTRIBUTE_UNIX_MODE)));
-				ft.set(it,6,i.get_attribute_string(FILE_ATTRIBUTE_OWNER_USER));
-				ft.set(it,7,i.get_attribute_string(FILE_ATTRIBUTE_OWNER_GROUP));
-				ft.set(it,8,rndsi(i.get_size()));
+				ft.set(it,5,rndtime(mtime));
+				ft.set(it,6,rndmode(i.get_attribute_uint32(FILE_ATTRIBUTE_UNIX_MODE)));
+				ft.set(it,7,i.get_attribute_string(FILE_ATTRIBUTE_OWNER_USER));
+				ft.set(it,8,i.get_attribute_string(FILE_ATTRIBUTE_OWNER_GROUP));
+				ft.set(it,9,rndsi(i.get_size()));
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					var en=fi.enumerate_children (FILE_ATTRIBUTE_STANDARD_NAME,flags);
 					FileInfo fich;
