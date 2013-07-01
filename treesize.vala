@@ -41,14 +41,14 @@ namespace Treesize {
 			sc.add_with_viewport(tv);
 			// Menu
 			var fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
-				Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL,Gtk.STOCK_ADD,Gtk.ResponseType.ACCEPT);
+				Gtk.Stock.CANCEL,Gtk.ResponseType.CANCEL,Gtk.Stock.ADD,Gtk.ResponseType.ACCEPT);
 			mu_one_sel=new GLib.List<Gtk.MenuItem>();
 			var mu=new Gtk.Menu();
-			mu_one_sel.prepend(createmi(Gtk.STOCK_OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
-			mu_one_sel.prepend(createmi(Gtk.STOCK_DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
+			mu_one_sel.prepend(createmi(Gtk.Stock.OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
+			mu_one_sel.prepend(createmi(Gtk.Stock.DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
 			mu.append(new Gtk.SeparatorMenuItem());
-			createmi(Gtk.STOCK_ADD,mu).activate.connect(()=>{ tm.seldir(fc); });
-			createmi(Gtk.STOCK_QUIT,mu).activate.connect(Gtk.main_quit);
+			createmi(Gtk.Stock.ADD,mu).activate.connect(()=>{ tm.seldir(fc); });
+			createmi(Gtk.Stock.QUIT,mu).activate.connect(Gtk.main_quit);
 			mu.show_all();
 			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
 			tv.get_selection().changed.connect(on_sel_chg);
@@ -81,6 +81,7 @@ namespace Treesize {
 		public void insert(FileNode fn){ if(!hst.lookup_extended(fn,null,null)){ hst.insert(fn,true); lst.append(fn); check(); } }
 		public bool empty(){ return hst.size()==0; }
 		public bool pop(out FileNode fn){
+			fn=null;
 			if(empty()) return false;
 			fn=lst.first().data;
 			lst.remove_link(lst.first());
@@ -146,7 +147,7 @@ namespace Treesize {
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
-			ft.remove(it);
+			ft.remove(ref it);
 		}
 		private void updssi(int64 chg){
 			ssi+=chg;
@@ -180,17 +181,16 @@ namespace Treesize {
 			int64 nsi=0;
 			try{
 				GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
-				FileInfo i=fi.query_info(FILE_ATTRIBUTE_STANDARD_ALLOCATED_SIZE+","+FILE_ATTRIBUTE_OWNER_USER+","+FILE_ATTRIBUTE_OWNER_GROUP+","+FILE_ATTRIBUTE_TIME_MODIFIED+","+FILE_ATTRIBUTE_UNIX_MODE+","+FILE_ATTRIBUTE_STANDARD_SIZE,flags,null);
-				nsi=(int64)i.get_attribute_uint64(FILE_ATTRIBUTE_STANDARD_ALLOCATED_SIZE);
-				TimeVal mtime;
-				i.get_modification_time(out mtime);
+				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE,flags,null);
+				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
+				TimeVal mtime=i.get_modification_time();
 				ft.set(it,5,rndtime(mtime));
-				ft.set(it,6,rndmode(i.get_attribute_uint32(FILE_ATTRIBUTE_UNIX_MODE)));
-				ft.set(it,7,i.get_attribute_string(FILE_ATTRIBUTE_OWNER_USER));
-				ft.set(it,8,i.get_attribute_string(FILE_ATTRIBUTE_OWNER_GROUP));
+				ft.set(it,6,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)));
+				ft.set(it,7,i.get_attribute_string(FileAttribute.OWNER_USER));
+				ft.set(it,8,i.get_attribute_string(FileAttribute.OWNER_GROUP));
 				ft.set(it,9,rndsi(i.get_size()));
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
-					var en=fi.enumerate_children (FILE_ATTRIBUTE_STANDARD_NAME,flags);
+					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
 					FileInfo fich;
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					while((fich=en.next_file())!=null){
