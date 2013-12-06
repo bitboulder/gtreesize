@@ -131,21 +131,24 @@ namespace Treesize {
 			fc.hide();
 		}
 		private void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
+		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
+			GLib.Value vid; base.get_value(it,0,out vid);
+			int id=vid.get_int();
+			if(id==0 || !fns.has_key(id)){
+				fn=null;
+				return false;
+			}else{
+				fn=fns.get(id);
+				return true;
+			}
+		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
-			if(column<2 || column>4){
+			if(column<3 || column>4){
 				base.get_value(iter,column,out val);
 			}else{
-				GLib.Value vid;
-				base.get_value(iter,0,out vid);
-				int id=vid.get_int();
-				FileNode? fn=null;
-				if(id!=0 && fns.has_key(id)) fn=fns.get(id);
-				if(fn!=null && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
+				FileNode fn;
+				if(it2fn(iter,out fn) && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
 				switch(column){
-				case 2:
-					val=Value(typeof(int64));
-					if(fn!=null) val.set_int64(fn.get_ssi());
-				break;
 				case 3:
 					val=Value(typeof(string));
 					if(fn!=null) val.set_string(fn.rnd_ssi());
@@ -164,9 +167,12 @@ namespace Treesize {
 			bool tchg=t!=lastupd;
 			lastupd=t;
 			FileNode fn;
-			if(!upddpl.empty() && (updfile.empty() || tchg)){
-				while(upddpl.pop(out fn)) row_changed(get_path(fn.get_it()),fn.get_it());
-			}else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
+			if(!upddpl.empty() && (updfile.empty() || tchg))
+				while(upddpl.pop(out fn)){
+					if(fn.get_ssichg()) set(fn.get_it(),2,fn.get_ssi(),-1);
+					else row_changed(get_path(fn.get_it()),fn.get_it());
+				}
+			else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
 			if(updfile.empty()) stdout.printf("upd %i\n",(int)(time_t()-updstart));
 			return updateon=!(updfile.empty() && upddpl.empty());
 		}
@@ -188,7 +194,8 @@ namespace Treesize {
 		private weak FileNode? pa;
 		private int64          si=0;
 		private int64          ssi=0;
-		public bool            vis=false;
+		private bool           ssichg=false;
+		public  bool           vis=false;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
@@ -205,10 +212,12 @@ namespace Treesize {
 		}
 		public Gtk.TreeIter get_it(){ return it; }
 		public int64 get_ssi(){ return ssi; }
+		public bool get_ssichg(){ bool ret=ssichg; ssichg=false; return ret; }
 		public string rnd_ssi(){ return rndsi(ssi); }
 		public int rnd_spi(){ return pa!=null?(int)(pa.ssi==0?0:ssi*100/pa.ssi):100; }
 		private void updssi(int64 chg){
 			ssi+=chg;
+			ssichg=true;
 			foreach(var fc in ch.get_values()) if(fc.vis) ft.upddpl.insert(fc);
 			if(pa!=null) pa.updssi(chg);
 			else if(vis) ft.upddpl.insert(this);
