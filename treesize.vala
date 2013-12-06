@@ -33,6 +33,8 @@ namespace Treesize {
 	public class Treesize : Gtk.Window {
 		private GLib.List<Gtk.MenuItem> mu_one_sel;
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
+		private Gdk.Cursor cur_def;
+		private Gdk.Cursor cur_wait;
 		public Treesize(string[] args){
 			// CellRenderer
 			var trs=new Gtk.CellRendererText();
@@ -45,6 +47,7 @@ namespace Treesize {
 			tc.pack_start(trf,false); tc.add_attribute(trf,"text",5);
 			// TreeView
 			var tm=new FileTree(args);
+			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});
 			var tv=new Gtk.TreeView.with_model(tm);
 			tv.append_column(tc);
 			tv.append_column(new Gtk.TreeViewColumn.with_attributes("MTime",new Gtk.CellRendererText(),"text",6));
@@ -82,6 +85,10 @@ namespace Treesize {
 			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
 			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			show_all();
+			// Cursor
+			cur_def=get_window().get_cursor();
+			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
+			// Finish
 			if(args.length<2) tm.seldir(fc);
 		}
 		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu){
@@ -114,11 +121,13 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel {
+		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
 		public GLib.HashTable<int,FileNode> fns=new GLib.HashTable<int,FileNode>(null,null);
 		private bool updateon=false;
 		private time_t lastupd=0;
+		private time_t updstart=0;
 		public FileTree(string[] args){
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
@@ -155,7 +164,6 @@ namespace Treesize {
 				}
 			}
 		}
-		private time_t updstart=0;
 		public bool update(){
 			if(updstart==0) updstart=time_t();
 			time_t t=time_t();
@@ -169,7 +177,9 @@ namespace Treesize {
 				}
 			else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
 			if(updfile.empty()) stdout.printf("upd %i\n",(int)(time_t()-updstart));
-			return updateon=!(updfile.empty() && upddpl.empty());
+			bool nupdateon=!(updfile.empty() && upddpl.empty());
+			if(nupdateon!=updateon) setcur(nupdateon);
+			return updateon=nupdateon;
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
 		public void runcmd(string _cmd,Gtk.TreeSelection s){
