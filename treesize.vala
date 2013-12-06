@@ -109,31 +109,42 @@ namespace Treesize {
 		}
 		private void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
-			GLib.Value id;
-			base.get_value(iter,0,out id);
-			if(id.get_int()!=0 && fns.has_key(id.get_int())){	
-				FileNode fn=fns.get(id.get_int());
-				fn.vis=true;
-				upddpl.insert(fn);
-				set(iter,0,0);
+			if(column<2 || column>4){
+				base.get_value(iter,column,out val);
+			}else{
+				GLib.Value vid;
+				base.get_value(iter,0,out vid);
+				int id=vid.get_int();
+				FileNode? fn=null;
+				if(id!=0 && fns.has_key(id)) fn=fns.get(id);
+				if(fn!=null && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
+				switch(column){
+				case 2:
+					val=Value(typeof(int64));
+					if(fn!=null) val.set_int64(fn.get_ssi());
+				break;
+				case 3:
+					val=Value(typeof(string));
+					if(fn!=null) val.set_string(fn.rnd_ssi());
+				break;
+				case 4:
+					val=Value(typeof(int));
+					if(fn!=null) val.set_int(fn.rnd_spi());
+				break;
+				}
 			}
-			base.get_value(iter,column,out val);
 		}
-		private int fdone=0;
+		private time_t updstart=0;
 		public bool update(){
+			if(updstart==0) updstart=time_t();
 			time_t t=time_t();
 			bool tchg=t!=lastupd;
 			lastupd=t;
 			FileNode fn;
 			if(!upddpl.empty() && (updfile.empty() || tchg)){
-				stdout.printf("updfile done: %i todo: %i\n",fdone,updfile.hst.size);
-				stdout.printf("upddpl %i\n",upddpl.hst.size);
-				while(upddpl.pop(out fn)) fn.upddpl();
-				stdout.printf("upddpl %i\n",upddpl.hst.size);
-			}else if(!updfile.empty()) if(updfile.pop(out fn)){
-				fn.updfile();
-				fdone++;
-			}
+				while(upddpl.pop(out fn)) row_changed(get_path(fn.get_it()),fn.get_it());
+			}else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
+			if(updfile.empty()) stdout.printf("upd %i\n",(int)(time_t()-updstart));
 			return updateon=!(updfile.empty() && upddpl.empty());
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
@@ -154,14 +165,14 @@ namespace Treesize {
 		private weak FileNode? pa;
 		private int64          si=0;
 		private int64          ssi=0;
-		public bool          vis=false;
+		public bool            vis=false;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
 			if(pa==null) ft.append(out it,null);
 			else ft.append(out it,pa.it);
-			ft.set(it,0,ft.fns.size+1,1,_fn,5,fi.get_basename());
+			ft.set(it,0,ft.fns.size+1,1,_fn,5,fi.get_basename(),-1);
 			ft.fns.set(ft.fns.size+1,this);
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 		}
@@ -169,13 +180,16 @@ namespace Treesize {
 			if(pa!=null) pa.updssi(-si);
 			ft.remove(ref it);
 		}
+		public Gtk.TreeIter get_it(){ return it; }
+		public int64 get_ssi(){ return ssi; }
+		public string rnd_ssi(){ return rndsi(ssi); }
+		public int rnd_spi(){ return pa!=null?(int)(pa.ssi==0?0:ssi*100/pa.ssi):100; }
 		private void updssi(int64 chg){
 			ssi+=chg;
 			foreach(var fc in ch.get_values()) if(fc.vis) ft.upddpl.insert(fc);
 			if(pa!=null) pa.updssi(chg);
 			else if(vis) ft.upddpl.insert(this);
 		}
-		public void upddpl(){ ft.set(it,2,ssi,3,rndsi(ssi),4,pa!=null?(pa.ssi==0?0:ssi*100/pa.ssi):100); }
 		private string rndsi(int64 _si){
 			if(_si==0) return "0";
 			string ext[5]={"k","M","G","T"};
@@ -204,11 +218,11 @@ namespace Treesize {
 				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE,flags,null);
 				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
 				TimeVal mtime=i.get_modification_time();
-				ft.set(it,6,rndtime(mtime));
-				ft.set(it,7,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)));
-				ft.set(it,8,i.get_attribute_string(FileAttribute.OWNER_USER));
-				ft.set(it,9,i.get_attribute_string(FileAttribute.OWNER_GROUP));
-				ft.set(it,10,rndsi(i.get_size()));
+				ft.set(it,6,rndtime(mtime),-1);
+				ft.set(it,7,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),-1);
+				ft.set(it,8,i.get_attribute_string(FileAttribute.OWNER_USER),-1);
+				ft.set(it,9,i.get_attribute_string(FileAttribute.OWNER_GROUP),-1);
+				ft.set(it,10,rndsi(i.get_size()),-1);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
 					FileInfo fich;
