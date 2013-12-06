@@ -1,0 +1,11 @@
+Source: treesize
+Section: sound
+Priority: optional
+Maintainer: Frank Duckhorn <frank@bitboulder.net>
+Build-Depends: valac
+Standards-Version: 1.0.0
+
+Package: treesize
+Architecture: any
+Description: treesize
+

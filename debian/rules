@@ -1,0 +1,62 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+#CFLAGS = -Wall -g -lpng -lX11
+
+#ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+#	export CFLAGS += -O0
+#else
+#	export CFLAGS += -O2
+#endif
+#ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+#	INSTALL_PROGRAM += -s
+#endif
+
+#export CPPFLAGS=-I/usr/include/libpng12
+#export LDFLAGS=-Wl,-rpath,/usr/lib/gthumb-2.0 -Wl,--as-needed
+
+#override_dh_auto_configure:
+#	./autogen.sh --prefix=/usr
+#	autoreconf -f -i
+#	dh_auto_configure -- --with-gconf-schema-file-dir=/usr/share/gconf/schemas \
+#		--disable-clutter \
+#		--enable-debug
+
+#override_dh_auto_install:
+#	dh_auto_install
+#	[ ! -d $(CURDIR)/debian/tmp/usr/share/icons/ ] || \
+#		mv $(CURDIR)/debian/tmp/usr/share/icons/hicolor/16x16/actions/flickr.png \
+#		   $(CURDIR)/debian/tmp/usr/share/icons/hicolor/16x16/actions/gthumb-flickr.png && \
+#		mv $(CURDIR)/debian/tmp/usr/share/icons/hicolor/16x16/actions/facebook.png \
+#		   $(CURDIR)/debian/tmp/usr/share/icons/hicolor/16x16/actions/gthumb-facebook.png
+
+#	find debian/ \( -name "*.la" -o -name "*.a" \) -exec rm -vrf {} \;
+
+#	# These go into gthumb...
+#	-rm -rf $(CURDIR)/debian/gthumb-data/usr/share/applications
+
+#	for file in $(wildcard $(CURDIR)/debian/gthumb-data/usr/share/gthumb/albumthemes/*/index.gthtml); do \
+#		sed -e "s/@CHARSET@/`grep "<?xml" \$${file} | cut -d'"' -f4 | tr [a-z] [A-Z]`/" \
+#			$(CURDIR)/debian/htaccess.tmpl > `dirname \$${file}`/htaccess; \
+#		echo "Please rename htaccess to .htaccess when uploading your Web Album." >> `dirname \$${file}`/README; \
+#	done
+
+#override_dh_shlibdeps:
+#	dh_shlibdeps -l/usr/lib/gthumb-2.0:/usr/lib/gthumb-2.0/extensions
+
+#override_dh_strip:
+#	dh_strip --keep-debug -X*.la -X*.a --dbg-package=gthumb-dbg
+
+#override_dh_auto_clean:
+#	dh_auto_clean
+#
+#	find . -name "Makefile.in" -delete
+#	rm -rf aclocal.m4 config.guess config.sub configure \
+#		m4/libtool.m4 m4/ltversion.m4 autom4te.cache/ \
+#		ltmain.sh
+
+%:
+	dh $@
