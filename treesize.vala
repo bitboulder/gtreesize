@@ -97,18 +97,18 @@ namespace Treesize {
 
 	public delegate void CheckFunc();
 	public class Queue {
-		public Gee.HashMap<FileNode,bool> hst=new Gee.HashMap<FileNode,bool>(null,null);
+		public GLib.HashTable<FileNode,bool> hst=new GLib.HashTable<FileNode,bool>(null,null);
 		private GLib.List<FileNode> lst=new GLib.List<FileNode>();
 		private CheckFunc check;
 		public Queue(CheckFunc _check){ check=_check; }
-		public void insert(FileNode fn){ if(!hst.has_key(fn)){ hst.set(fn,true); lst.append(fn); check(); } }
-		public bool empty(){ return hst.size==0; }
+		public void insert(FileNode fn){ if(!hst.lookup_extended(fn,null,null)){ hst.insert(fn,true); lst.append(fn); check(); } }
+		public bool empty(){ return hst.size()==0; }
 		public bool pop(out FileNode fn){
 			fn=null;
 			if(empty()) return false;
 			fn=lst.first().data;
 			lst.remove_link(lst.first());
-			hst.unset(fn);
+			hst.remove(fn);
 			return true;
 		}
 	}
@@ -116,7 +116,7 @@ namespace Treesize {
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel {
 		public Queue upddpl;
 		public Queue updfile;
-		public Gee.HashMap<int,FileNode> fns=new Gee.HashMap<int,FileNode>(null,null);
+		public GLib.HashTable<int,FileNode> fns=new GLib.HashTable<int,FileNode>(null,null);
 		private bool updateon=false;
 		private time_t lastupd=0;
 		public FileTree(string[] args){
@@ -134,13 +134,8 @@ namespace Treesize {
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vid; base.get_value(it,0,out vid);
 			int id=vid.get_int();
-			if(id==0 || !fns.has_key(id)){
-				fn=null;
-				return false;
-			}else{
-				fn=fns.get(id);
-				return true;
-			}
+			fn=null;
+			return id!=0 && fns.lookup_extended(id,null,out fn);
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
 			if(column<3 || column>4){
@@ -202,8 +197,8 @@ namespace Treesize {
 			pa=_pa;
 			if(pa==null) ft.append(out it,null);
 			else ft.append(out it,pa.it);
-			ft.set(it,0,ft.fns.size+1,1,_fn,5,fi.get_basename(),-1);
-			ft.fns.set(ft.fns.size+1,this);
+			ft.set(it,0,ft.fns.size()+1,1,_fn,5,fi.get_basename(),-1);
+			ft.fns.set((int)ft.fns.size()+1,this);
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 		}
 		~FileNode(){
