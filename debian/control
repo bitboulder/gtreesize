@@ -1,11 +1,15 @@
 Source: treesize
-Section: sound
+Section: admin
 Priority: optional
 Maintainer: Frank Duckhorn <frank@bitboulder.net>
-Build-Depends: valac
+Build-Depends: valac-0.14 (>=0.14.0), libgtk-3-dev, pkg-config, scons
 Standards-Version: 1.0.0
+Vcs-Git: http://github.com/bitboulder/treesize.git
+Vcs-Browser: http://github.com/bitboulder/treesize
 
 Package: treesize
 Architecture: any
-Description: treesize
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Display the used disk space in a directory tree.
+ It helps you to find files and directories wasting much disk space.
 
