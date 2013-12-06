@@ -241,11 +241,12 @@ namespace Treesize {
 				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE,flags,null);
 				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
 				TimeVal mtime=i.get_modification_time();
-				ft.set(it,6,rndtime(mtime),-1);
-				ft.set(it,7,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),-1);
-				ft.set(it,8,i.get_attribute_string(FileAttribute.OWNER_USER),-1);
-				ft.set(it,9,i.get_attribute_string(FileAttribute.OWNER_GROUP),-1);
-				ft.set(it,10,rndsi(i.get_size()),-1);
+				ft.set(it,
+					6,rndtime(mtime),
+					7,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
+					8,i.get_attribute_string(FileAttribute.OWNER_USER),
+					9,i.get_attribute_string(FileAttribute.OWNER_GROUP),
+					10,rndsi(i.get_size()),-1);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
 					FileInfo fich;
