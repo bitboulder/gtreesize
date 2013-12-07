@@ -25,7 +25,7 @@ namespace Treesize {
 	public static int main (string[] args)
 	{
 		Gtk.init(ref args);
-		GLib.Environment.set_application_name("Treesize");
+		GLib.Environment.set_application_name("gTreesize");
 		new Treesize(args);
 		Gtk.main();
 		return 0;
