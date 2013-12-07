@@ -72,6 +72,7 @@ namespace Treesize {
 			var mu=new Gtk.Menu();
 			mu_one_sel.prepend(createmi(Gtk.Stock.OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
 			mu_one_sel.prepend(createmi(Gtk.Stock.DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
+			createmi(Gtk.Stock.REFRESH,mu).activate.connect(()=>{ tm.refresh(tv.get_selection()); });
 			mu.append(new Gtk.SeparatorMenuItem());
 			createmi(Gtk.Stock.ADD,mu).activate.connect(()=>{ tm.seldir(fc); });
 			createmi(Gtk.Stock.QUIT,mu).activate.connect(Gtk.main_quit);
@@ -79,9 +80,19 @@ namespace Treesize {
 			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
 			tv.get_selection().changed.connect(on_sel_chg);
 			on_sel_chg(tv.get_selection());
+			// Buttons
+			Gtk.Button btn;
+			var but=new Gtk.ButtonBox(Gtk.Orientation.HORIZONTAL);
+			but.add(btn=new Gtk.Button.from_stock(Gtk.Stock.REFRESH)); btn.clicked.connect(()=>{ tm.refresh(null); });
+			but.add(btn=new Gtk.Button.from_stock(Gtk.Stock.ADD));     btn.clicked.connect(()=>{ tm.seldir(fc);    });
+			but.add(btn=new Gtk.Button.from_stock(Gtk.Stock.QUIT));    btn.clicked.connect(Gtk.main_quit);
+			// VBox
+			var box=new Gtk.Box(Gtk.Orientation.VERTICAL,0);
+			box.pack_start(sc,true,true,0);
+			box.pack_start(but,false,false,0);
 			// Window
-			add(sc);
-			set_default_size(500,700);
+			add(box);
+			set_default_size(700,700);
 			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
 			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			show_all();
@@ -140,8 +151,7 @@ namespace Treesize {
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vid; base.get_value(it,0,out vid);
 			int id=vid.get_int();
-			if(id==0) return false;
-			return (fn=fns.lookup(id))!=null;
+			return (fn= id==0 ? null : fns.lookup(id))!=null;
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
 			if(column<3 || column>4){
@@ -180,6 +190,17 @@ namespace Treesize {
 			return updateon=nupdateon;
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
+		public void refresh(Gtk.TreeSelection? s){
+			if(s!=null) s.selected_foreach((tm,tp,it)=>{
+					FileNode fn;
+					if(it2fn(it,out fn)) updfile.insert(fn);
+					});
+			else base.foreach((tm,tp,it)=>{
+					FileNode fn;
+					if(it2fn(it,out fn)) updfile.insert(fn);
+					return false;
+					});
+		}
 		public void runcmd(string _cmd,Gtk.TreeSelection s){
 			Gtk.TreeIter iter;
 			string fn;
@@ -194,11 +215,11 @@ namespace Treesize {
 		private FileTree     ft;
 		private Gtk.TreeIter it;
 		private GLib.HashTable<string,FileNode> ch;
-		private weak FileNode? pa;
-		private int64          si=0;
-		private int64          ssi=0;
-		private bool           ssichg=false;
-		public  bool           vis=false;
+		private FileNode?    pa;
+		private int64        si=0;
+		private int64        ssi=0;
+		private bool         ssichg=false;
+		public  bool         vis=false;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
@@ -267,9 +288,12 @@ namespace Treesize {
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					while((fich=en.next_file())!=null){
 						FileNode? fn=ch.lookup(fich.get_name());
-						if(fn==null) ft.updfile.insert(fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this));
+						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this);
+						else ch.remove(fich.get_name());
+						ft.updfile.insert(fn);
 						nch.insert(fich.get_name(),fn);
 					}
+					ch.find((fn,fc)=>{ ft.remove(ref fc.it); return false; });
 					ch=nch;
 				}
 				Timer.timer(1,1);

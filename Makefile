@@ -19,6 +19,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+VFLAGS=--pkg gtk+-3.0 --pkg posix
+CFLAGS=-O2 -Wall -Wno-unused -g -c `pkg-config --cflags gtk+-3.0`
+LFLAGS=`pkg-config --libs gtk+-3.0`
+
 all: treesize
 
 clean:
@@ -30,8 +34,11 @@ install:
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/treesize
 
-treesize: treesize.c Makefile
-	gcc -O2 -Wall -Wno-unused -g treesize.c `pkg-config --cflags --libs gtk+-2.0` -o treesize
+%: %.o Makefile
+	gcc $(LFLAGS) $*.o -o $*
 
-treesize.c: Makefile treesize.vala
-	valac --pkg gtk+-3.0 --pkg posix -C treesize.vala
+%.o: %.c Makefile
+	gcc $(CFLAGS) $*.c -o $*.o
+
+%.c: %.vala Makefile
+	valac $(VFLAGS) -C $*.vala

@@ -1,5 +1,6 @@
 treesize
 treesize.c
+treesize.o
 debian/files
 debian/treesize.debhelper.log
 debian/treesize.substvars
