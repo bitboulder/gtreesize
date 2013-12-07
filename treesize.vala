@@ -104,17 +104,15 @@ namespace Treesize {
 
 	public delegate void CheckFunc();
 	public class Queue {
-		public GLib.HashTable<FileNode,bool> hst=new GLib.HashTable<FileNode,bool>(null,null);
-		private GLib.List<FileNode> lst=new GLib.List<FileNode>();
+		private GLib.HashTable<FileNode,FileNode> hst=new GLib.HashTable<FileNode,FileNode>(null,null);
 		private CheckFunc check;
 		public Queue(CheckFunc _check){ check=_check; }
-		public void insert(FileNode fn){ if(!hst.lookup_extended(fn,null,null)){ hst.insert(fn,true); lst.append(fn); check(); } }
+		public void insert(FileNode fn){ if(!hst.contains(fn)){ hst.insert(fn,fn); check(); } }
 		public bool empty(){ return hst.size()==0; }
 		public bool pop(out FileNode fn){
 			fn=null;
 			if(empty()) return false;
-			fn=lst.first().data;
-			lst.remove_link(lst.first());
+			fn=hst.find((k,v)=>{ return true; });
 			hst.remove(fn);
 			return true;
 		}
@@ -127,7 +125,6 @@ namespace Treesize {
 		public GLib.HashTable<int,FileNode> fns=new GLib.HashTable<int,FileNode>(null,null);
 		private bool updateon=false;
 		private time_t lastupd=0;
-		private time_t updstart=0;
 		public FileTree(string[] args){
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
@@ -143,8 +140,8 @@ namespace Treesize {
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vid; base.get_value(it,0,out vid);
 			int id=vid.get_int();
-			fn=null;
-			return id!=0 && fns.lookup_extended(id,null,out fn);
+			if(id==0) return false;
+			return (fn=fns.lookup(id))!=null;
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
 			if(column<3 || column>4){
@@ -165,7 +162,7 @@ namespace Treesize {
 			}
 		}
 		public bool update(){
-			if(updstart==0) updstart=time_t();
+			Timer.timer(0,-1);
 			time_t t=time_t();
 			bool tchg=t!=lastupd;
 			lastupd=t;
@@ -176,9 +173,10 @@ namespace Treesize {
 					else row_changed(get_path(fn.get_it()),fn.get_it());
 				}
 			else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
-			if(updfile.empty()) stdout.printf("upd %i\n",(int)(time_t()-updstart));
 			bool nupdateon=!(updfile.empty() && upddpl.empty());
+			Timer.timer(0,0);
 			if(nupdateon!=updateon) setcur(nupdateon);
+			if(updateon && !nupdateon){ Timer.timer(1,-2); Timer.timer(0,-2); }
 			return updateon=nupdateon;
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
@@ -223,7 +221,7 @@ namespace Treesize {
 		private void updssi(int64 chg){
 			ssi+=chg;
 			ssichg=true;
-			foreach(var fc in ch.get_values()) if(fc.vis) ft.upddpl.insert(fc);
+			if(vis) ch.find((fn,fc)=>{ if(fc.vis) ft.upddpl.insert(fc); return false; });
 			if(pa!=null) pa.updssi(chg);
 			else if(vis) ft.upddpl.insert(this);
 		}
@@ -250,6 +248,7 @@ namespace Treesize {
 		}
 		public void updfile(){
 			int64 nsi=0;
+			Timer.timer(1,-1);
 			try{
 				GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
 				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE,flags,null);
@@ -261,27 +260,46 @@ namespace Treesize {
 					8,i.get_attribute_string(FileAttribute.OWNER_USER),
 					9,i.get_attribute_string(FileAttribute.OWNER_GROUP),
 					10,rndsi(i.get_size()),-1);
+				Timer.timer(1,0);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
 					FileInfo fich;
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					while((fich=en.next_file())!=null){
-						FileNode fn;
-						if(!ch.lookup_extended(fich.get_name(),null,out fn))
-							ft.updfile.insert(fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this));
+						FileNode? fn=ch.lookup(fich.get_name());
+						if(fn==null) ft.updfile.insert(fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this));
 						nch.insert(fich.get_name(),fn);
 					}
 					ch=nch;
 				}
-				var fm=fi.monitor(FileMonitorFlags.NONE); /* TODO: monitor_directory */
-				fm.changed.connect((file,otherfile,evtype)=>{
-					ft.updfile.insert(this);
-				});
+				Timer.timer(1,1);
+//				var fm=fi.monitor(FileMonitorFlags.NONE); /* TODO: monitor_directory */
+//				fm.changed.connect((file,otherfile,evtype)=>{
+//					ft.updfile.insert(this);
+//				});
+				Timer.timer(1,2);
 			}catch(Error e){
 				nsi=0;
 			}
 			updssi(nsi-si);
 			si=nsi;
+			Timer.timer(1,3);
+		}
+	}
+	public class Timer {
+		private static Posix.timespec tsl[5];
+		private static double timers[50];
+		public static void timer(int x,int id){
+			Posix.timespec ts;
+			Posix.clock_gettime(Posix.CLOCK_PROCESS_CPUTIME_ID,out ts);
+			if(id>=0) timers[x*10+id]+=(double)(ts.tv_sec-tsl[x].tv_sec)*1000+(double)(ts.tv_nsec-tsl[x].tv_nsec)/1000000;
+			if(id==-2){
+				int i;
+				stdout.printf("[%i]",x);
+				for(i=0;i<10;i++){ stdout.printf(" %i:%.0f",i,timers[x*10+i]); timers[x*10+i]=0; }
+				stdout.printf("\n");
+			}
+			tsl[x]=ts;
 		}
 	}
 }
