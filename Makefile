@@ -1,9 +1,9 @@
-# Package: treesize
+# Package: gtreesize
 # Author:  Frank Duckhorn
 #
 # Copyright (c) 2013 Frank Duckhorn
 #
-# treesize is free software: you can redistribute it and/or modify it under the
+# gtreesize is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 2 of the License, or (at your option)
 # any later version.
@@ -23,16 +23,16 @@ VFLAGS=--pkg gtk+-3.0 --pkg posix
 CFLAGS=-O2 -Wall -Wno-unused -g -c `pkg-config --cflags gtk+-3.0`
 LFLAGS=`pkg-config --libs gtk+-3.0`
 
-all: treesize
+all: gtreesize
 
 clean:
-	rm -f treesize treesize.c
+	rm -f gtreesize *.c *.o
 
 install:
-	install -D treesize    $(DESTDIR)/usr/bin/treesize
+	install -D gtreesize    $(DESTDIR)/usr/bin/gtreesize
 
 uninstall:
-	rm -f $(DESTDIR)/usr/bin/treesize
+	rm -f $(DESTDIR)/usr/bin/gtreesize
 
 %: %.o Makefile
 	gcc $(LFLAGS) $*.o -o $*

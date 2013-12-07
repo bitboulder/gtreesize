@@ -1,8 +1,8 @@
-treesize (1.0.0) unstable; urgency=low
+gtreesize (1.0.0) unstable; urgency=low
 
   * init
 
- -- Frank Duckhorn <frank@bitboulder.net>  Fri, 24 Feb 2012 18:58:50 +0200
+ -- Frank Duckhorn <frank@bitboulder.net>  Sat, 07 Dec 2013 18:58:50 +0200
 
 Local variables:
 mode: debian-changelog

@@ -1,5 +1,5 @@
-treesize
-========
+gtreesize
+=========
 
 Display the disk usage in a browsable directory tree.
 
