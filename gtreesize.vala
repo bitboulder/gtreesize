@@ -179,8 +179,10 @@ namespace Treesize {
 			FileNode fn;
 			if(!upddpl.empty() && (updfile.empty() || tchg))
 				while(upddpl.pop(out fn)){
-					if(fn.get_ssichg()) set(fn.get_it(),2,fn.get_ssi(),-1);
-					else row_changed(get_path(fn.get_it()),fn.get_it());
+					if(!fn.del){
+						if(fn.get_ssichg()) set(fn.get_it(),2,fn.get_ssi());
+						else row_changed(get_path(fn.get_it()),fn.get_it());
+					}
 				}
 			else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
 			bool nupdateon=!(updfile.empty() && upddpl.empty());
@@ -220,13 +222,14 @@ namespace Treesize {
 		private int64        ssi=0;
 		private bool         ssichg=false;
 		public  bool         vis=false;
+		public  bool         del=false;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
 			if(pa==null) ft.append(out it,null);
 			else ft.append(out it,pa.it);
-			ft.set(it,0,ft.fns.size()+1,1,_fn,5,fi.get_basename(),-1);
+			ft.set(it,0,ft.fns.size()+1,1,_fn,5,fi.get_basename());
 			ft.fns.set((int)ft.fns.size()+1,this);
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 		}
@@ -268,6 +271,7 @@ namespace Treesize {
 			);
 		}
 		public void updfile(){
+			if(del) return;
 			int64 nsi=0;
 			Timer.timer(1,-1);
 			try{
@@ -280,7 +284,7 @@ namespace Treesize {
 					7,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
 					8,i.get_attribute_string(FileAttribute.OWNER_USER),
 					9,i.get_attribute_string(FileAttribute.OWNER_GROUP),
-					10,rndsi(i.get_size()),-1);
+					10,rndsi(i.get_size()));
 				Timer.timer(1,0);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
@@ -293,7 +297,7 @@ namespace Treesize {
 						ft.updfile.insert(fn);
 						nch.insert(fich.get_name(),fn);
 					}
-					ch.find((fn,fc)=>{ ft.remove(ref fc.it); return false; });
+					ch.find((fn,fc)=>{ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); return false; });
 					ch=nch;
 				}
 				Timer.timer(1,1);
@@ -308,6 +312,10 @@ namespace Treesize {
 			updssi(nsi-si);
 			si=nsi;
 			Timer.timer(1,3);
+		}
+		private void kill(){
+			del=true;
+			ch.find((fn,fc)=>{ fc.kill(); return false; });
 		}
 	}
 	public class Timer {

@@ -34,11 +34,11 @@ install:
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/gtreesize
 
-%: %.o Makefile
-	gcc $(LFLAGS) $*.o -o $*
+gtreesize: gtreesize.o Makefile
+	gcc $(LFLAGS) gtreesize.o -o gtreesize
 
-%.o: %.c Makefile
-	gcc $(CFLAGS) $*.c -o $*.o
+gtreesize.o: gtreesize.c Makefile
+	gcc $(CFLAGS) gtreesize.c -o gtreesize.o
 
-%.c: %.vala Makefile
-	valac $(VFLAGS) -C $*.vala
+gtreesize.c: gtreesize.vala Makefile
+	valac $(VFLAGS) -C gtreesize.vala
