@@ -26,7 +26,9 @@ namespace Treesize {
 	{
 		Gtk.init(ref args);
 		GLib.Environment.set_application_name("gTreesize");
-		Treesize.create(args);
+		var tmp=new Treesize(args); tmp.destroy();
+		var ts=Treesize.create(args);
+		ts.show_all();
 		Gtk.main();
 		return 0;
 	}
@@ -37,7 +39,11 @@ namespace Treesize {
 		private Gdk.Cursor cur_wait;
 		public static Treesize create(string[] args){
 			var builder=new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
+			builder.connect_signals(null);
 			return builder.get_object("treesize") as Treesize;
+		}
+		public void parser_finished(Gtk.Builder builder){
+			builder.connect_signals(this);
 		}
 		public Treesize(string[] args){
 			// CellRenderer
@@ -84,32 +90,20 @@ namespace Treesize {
 			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
 			tv.get_selection().changed.connect(on_sel_chg);
 			on_sel_chg(tv.get_selection());
-			// Buttons
-			Gtk.Button btn;
-			var but=new Gtk.ButtonBox(Gtk.Orientation.HORIZONTAL);
-			but.add(btn=new Gtk.Button.from_stock("gtk-refresh")); btn.clicked.connect(()=>{ tm.refresh(null); });
-			but.add(btn=new Gtk.Button.from_stock("gtk-add"));     btn.clicked.connect(()=>{ tm.seldir(fc);    });
-			but.add(btn=new Gtk.Button.from_stock("gtk-quit"));    btn.clicked.connect(Gtk.main_quit);
-			// VBox
-			var box=new Gtk.Box(Gtk.Orientation.VERTICAL,0);
-			box.pack_start(sc,true,true,0);
-			box.pack_start(but,false,false,0);
 			// Window
-//			add(box);
-			set_default_size(700,700);
-			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
-			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
-			show_all();
+//			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			// Cursor
 			cur_def=get_window().get_cursor();
 			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
 			// Finish
 //			if(args.length<2) tm.seldir(fc);
 		}
-		private void on_add(){
+		private void on_refresh(){
+			//tm.refresh(null);
 		}
-		private void on_quit(){
-			Gtk.main_quit();
+		public void on_add(){
+			stdout.printf("HALLO\n");
+			//tm.seldir(fc)
 		}
 		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu){
 			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);
