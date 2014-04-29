@@ -21,7 +21,7 @@
 
 VFLAGS=--pkg gtk+-3.0 --pkg posix
 CFLAGS=-O2 -Wall -Wno-unused -g -c `pkg-config --cflags gtk+-3.0`
-LFLAGS=`pkg-config --libs gtk+-3.0`
+LFLAGS=`pkg-config --libs gtk+-3.0` -rdynamic
 
 all: gtreesize
 

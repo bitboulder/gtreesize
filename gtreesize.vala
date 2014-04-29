@@ -39,7 +39,6 @@ namespace Treesize {
 		private Gdk.Cursor cur_wait;
 		public static Treesize create(string[] args){
 			var builder=new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
-			builder.connect_signals(null);
 			return builder.get_object("treesize") as Treesize;
 		}
 		public void parser_finished(Gtk.Builder builder){
