@@ -71,9 +71,6 @@ namespace Treesize {
 				uchar[] data=(uchar[])fn.to_utf8(); data.length++;
 				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
 			});
-			// ScrolledWindow
-			var sc=new Gtk.ScrolledWindow(null,null);
-			sc.add_with_viewport(tv);
 			// Menu
 			var fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
 				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT);
@@ -97,10 +94,11 @@ namespace Treesize {
 			// Finish
 //			if(args.length<2) tm.seldir(fc);
 		}
-		private void on_refresh(){
+		protected void on_refresh(){
+			stdout.printf("HALLO 1\n");
 			//tm.refresh(null);
 		}
-		public void on_add(){
+		protected void on_add(){
 			stdout.printf("HALLO\n");
 			//tm.seldir(fc)
 		}

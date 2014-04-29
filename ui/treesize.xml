@@ -12,10 +12,32 @@
 		        <property name="can_focus">False</property>
 				<property name="orientation">GTK_ORIENTATION_VERTICAL</property>
 				<child>
+					<object class="GtkScrolledWindow" id="treesize-sc">
+						<child>
+							<object class="GtkTreeView" id="treesize-tv">
+							</object>
+						</child>
+					</object>
+					<packing>
+						<property name="expand">True</property>
+						<property name="fill">True</property>
+						<property name="position">0</property>
+					</packing>
+				</child>
+				<child>
 					<object class="GtkButtonBox" id="treesize-bbox">
         				<property name="visible">True</property>
 				        <property name="can_focus">False</property>
 						<property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+						<child>
+							<object class="GtkButton" id="treesize-btn-refresh">
+        						<property name="visible">True</property>
+						        <property name="can_focus">True</property>
+								<property name="use_stock">True</property>
+								<property name="label">gtk-refresh</property>
+                				<signal name="clicked" handler="treesize_treesize_on_refresh"/>
+							</object>
+						</child>
 						<child>
 							<object class="GtkButton" id="treesize-btn-add">
         						<property name="visible">True</property>
