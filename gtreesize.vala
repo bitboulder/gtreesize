@@ -26,15 +26,19 @@ namespace Treesize {
 	{
 		Gtk.init(ref args);
 		GLib.Environment.set_application_name("gTreesize");
-		new Treesize(args);
+		Treesize.create(args);
 		Gtk.main();
 		return 0;
 	}
-	public class Treesize : Gtk.Window {
+	public class Treesize : Gtk.Window, Gtk.Buildable {
 		private GLib.List<Gtk.MenuItem> mu_one_sel;
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
+		public static Treesize create(string[] args){
+			var builder=new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
+			return builder.get_object("treesize") as Treesize;
+		}
 		public Treesize(string[] args){
 			// CellRenderer
 			var trs=new Gtk.CellRendererText();
@@ -91,7 +95,7 @@ namespace Treesize {
 			box.pack_start(sc,true,true,0);
 			box.pack_start(but,false,false,0);
 			// Window
-			add(box);
+//			add(box);
 			set_default_size(700,700);
 			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
 			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
@@ -100,7 +104,12 @@ namespace Treesize {
 			cur_def=get_window().get_cursor();
 			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
 			// Finish
-			if(args.length<2) tm.seldir(fc);
+//			if(args.length<2) tm.seldir(fc);
+		}
+		private void on_add(){
+		}
+		private void on_quit(){
+			Gtk.main_quit();
 		}
 		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu){
 			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);

@@ -34,11 +34,17 @@ install:
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/gtreesize
 
-gtreesize: gtreesize.o Makefile
-	gcc $(LFLAGS) gtreesize.o -o gtreesize
+gtreesize: gtreesize.o resources.o Makefile
+	gcc $(LFLAGS) gtreesize.o resources.o -o gtreesize
 
 gtreesize.o: gtreesize.c Makefile
 	gcc $(CFLAGS) gtreesize.c -o gtreesize.o
 
+resources.o: resources.c Makefile
+	gcc $(CFLAGS) resources.c -o resources.o
+
 gtreesize.c: gtreesize.vala Makefile
 	valac $(VFLAGS) -C gtreesize.vala
+
+resources.c: resources.gresource.xml ui/treesize.xml
+	glib-compile-resources --generate-source resources.gresource.xml

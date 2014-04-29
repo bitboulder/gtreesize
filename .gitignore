@@ -4,3 +4,5 @@ gtreesize.o
 debian/files
 debian/gtreesize.debhelper.log
 debian/gtreesize.substvars
+resources.c
+resources.o

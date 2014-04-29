@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<!-- interface-requires gtk+ 3.0 -->
+	<object class="GtkWindow" id="treesize">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+		<child>
+			<object class="GtkBox" id="treesize-box">
+        		<property name="visible">True</property>
+		        <property name="can_focus">False</property>
+				<property name="orientation">VERTICAL</property>
+				<child>
+					<object class="GtkButtonBox" id="treesize-bbox">
+        				<property name="visible">True</property>
+				        <property name="can_focus">False</property>
+						<property name="orientation">HORIZONTAL</property>
+						<child>
+							<object class="GtkButton" id="treesize-btn-add">
+        						<property name="visible">True</property>
+						        <property name="can_focus">True</property>
+								<property name="image">list-add</property>
+								<property name="label">Add</property>
+                				<signal name="clicked" handler="treesize_treesize_on_add" swapped="yes"/>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="treesize-btn-quit">
+        						<property name="visible">True</property>
+						        <property name="can_focus">True</property>
+								<property name="image">application-exit</property>
+								<property name="label">Quit</property>
+                				<signal name="clicked" handler="treesize_treesize_on_quit" swapped="yes"/>
+							</object>
+						</child>
+					</object>
+					<packing>
+						<property name="expand">False</property>
+						<property name="fill">False</property>
+						<property name="position">1</property>
+					</packing>
+				</child>
+			</object>
+		</child>
+	</object>
+</interface>
+
