@@ -302,7 +302,8 @@ namespace Treesize {
 				}
 				Timer.timer(1,1);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
-					var fm=fi.monitor_directory(FileMonitorFlags.NONE); /* TODO: monitor_directory */
+					stdout.printf("mon: %s\n",fi.get_path());
+					var fm=fi.monitor_directory(FileMonitorFlags.NONE,null); /* TODO: monitor_directory */
 					fm.changed.connect((file,otherfile,evtype)=>{
 						stdout.printf("chg: %s %s\n",evtype.to_string(),file.get_path());
 //						ft.updfile.insert(this);
