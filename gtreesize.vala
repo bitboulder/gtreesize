@@ -67,15 +67,15 @@ namespace Treesize {
 			sc.add_with_viewport(tv);
 			// Menu
 			var fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
-				Gtk.Stock.CANCEL,Gtk.ResponseType.CANCEL,Gtk.Stock.ADD,Gtk.ResponseType.ACCEPT);
+				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT);
 			mu_one_sel=new GLib.List<Gtk.MenuItem>();
 			var mu=new Gtk.Menu();
-			mu_one_sel.prepend(createmi(Gtk.Stock.OPEN,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
-			mu_one_sel.prepend(createmi(Gtk.Stock.DELETE,mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
-			createmi(Gtk.Stock.REFRESH,mu).activate.connect(()=>{ tm.refresh(tv.get_selection()); });
+			mu_one_sel.prepend(createmi("gtk-open",mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
+			mu_one_sel.prepend(createmi("gtk-delete",mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
+			createmi("gtk-refresh",mu).activate.connect(()=>{ tm.refresh(tv.get_selection()); });
 			mu.append(new Gtk.SeparatorMenuItem());
-			createmi(Gtk.Stock.ADD,mu).activate.connect(()=>{ tm.seldir(fc); });
-			createmi(Gtk.Stock.QUIT,mu).activate.connect(Gtk.main_quit);
+			createmi("gtk-add",mu).activate.connect(()=>{ tm.seldir(fc); });
+			createmi("gtk-quit",mu).activate.connect(Gtk.main_quit);
 			mu.show_all();
 			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
 			tv.get_selection().changed.connect(on_sel_chg);
@@ -83,9 +83,9 @@ namespace Treesize {
 			// Buttons
 			Gtk.Button btn;
 			var but=new Gtk.ButtonBox(Gtk.Orientation.HORIZONTAL);
-			but.add(btn=new Gtk.Button.from_stock(Gtk.Stock.REFRESH)); btn.clicked.connect(()=>{ tm.refresh(null); });
-			but.add(btn=new Gtk.Button.from_stock(Gtk.Stock.ADD));     btn.clicked.connect(()=>{ tm.seldir(fc);    });
-			but.add(btn=new Gtk.Button.from_stock(Gtk.Stock.QUIT));    btn.clicked.connect(Gtk.main_quit);
+			but.add(btn=new Gtk.Button.from_stock("gtk-refresh")); btn.clicked.connect(()=>{ tm.refresh(null); });
+			but.add(btn=new Gtk.Button.from_stock("gtk-add"));     btn.clicked.connect(()=>{ tm.seldir(fc);    });
+			but.add(btn=new Gtk.Button.from_stock("gtk-quit"));    btn.clicked.connect(Gtk.main_quit);
 			// VBox
 			var box=new Gtk.Box(Gtk.Orientation.VERTICAL,0);
 			box.pack_start(sc,true,true,0);
