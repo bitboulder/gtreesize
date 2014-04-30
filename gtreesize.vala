@@ -39,12 +39,11 @@ namespace Treesize {
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
 		public void parser_finished(Gtk.Builder builder){
-			var ts=builder.get_object("treesize") as Treesize;
 			var tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.model=new FileTree(args);
 			if(args.length<2) ts.on_add();
 			builder.connect_signals(this);
-			ts.show_all();
+			show_all();
 		}
 		public Treesize(){}
 /*		public Treesize(string[] args){
