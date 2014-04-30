@@ -26,7 +26,7 @@ namespace Treesize {
 	{
 		Gtk.init(ref args);
 		GLib.Environment.set_application_name("gTreesize");
-		var tmp=new Treesize(args); tmp.destroy();
+		var tmp=new Treesize(); tmp.destroy();
 		var ts=Treesize.create(args);
 		ts.show_all();
 		Gtk.main();
@@ -39,31 +39,19 @@ namespace Treesize {
 		private Gdk.Cursor cur_wait;
 		public static Treesize create(string[] args){
 			var builder=new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
-			return builder.get_object("treesize") as Treesize;
+			var ts=builder.get_object("treesize") as Treesize;
+			var tv=builder.get_object("treesize-tv") as Gtk.TreeView;
+			tv.model=new FileTree(args);
+			if(args.length<2) ts.on_add();
+			return ts;
 		}
 		public void parser_finished(Gtk.Builder builder){
 			builder.connect_signals(this);
 		}
-		public Treesize(string[] args){
-			// CellRenderer
-			var trs=new Gtk.CellRendererText();
-			var trp=new Gtk.CellRendererProgress();
-			var trf=new Gtk.CellRendererText();
-			var tc=new Gtk.TreeViewColumn();
-			tc.set_title("File");
-			tc.pack_start(trs,false); tc.add_attribute(trs,"text",3);
-			tc.pack_start(trp,false); tc.add_attribute(trp,"value",4);
-			tc.pack_start(trf,false); tc.add_attribute(trf,"text",5);
+		public Treesize(){}
+/*		public Treesize(string[] args){
 			// TreeView
-			var tm=new FileTree(args);
 			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});
-			var tv=new Gtk.TreeView.with_model(tm);
-			tv.append_column(tc);
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("MTime",new Gtk.CellRendererText(),"text",6));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Mode",new Gtk.CellRendererText(),"text",7));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Owner",new Gtk.CellRendererText(),"text",8));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Group",new Gtk.CellRendererText(),"text",9));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Size",new Gtk.CellRendererText(),"text",10));
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
 			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{
 				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
@@ -92,8 +80,7 @@ namespace Treesize {
 			cur_def=get_window().get_cursor();
 			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
 			// Finish
-//			if(args.length<2) tm.seldir(fc);
-		}
+		}*/
 		protected void on_refresh(){
 			stdout.printf("HALLO 1\n");
 			//tm.refresh(null);
