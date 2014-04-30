@@ -47,8 +47,7 @@ namespace Treesize {
 		public void parser_finished(Gtk.Builder builder){
 			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			// FileTree
-			tm=new FileTree(args);
-			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});
+			tm=builder.get_object("filetree") as FileTree;
 			// TreeView
 			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.model=tm;
@@ -81,6 +80,9 @@ namespace Treesize {
 			mu.popup(null,null,null,ev.button,Gtk.get_current_event_time());
 			return true;
 		}
+		protected void on_setcur(bool wait){
+			get_window().set_cursor(wait?cur_wait:cur_def);
+		}
 		protected void on_sel_chg(Gtk.TreeSelection s){
 			int n=s.count_selected_rows();
 			foreach(var i in mu_one_sel) i.sensitive=(n==1);
@@ -103,17 +105,16 @@ namespace Treesize {
 		}
 	}
 
-	public class FileTree : Gtk.TreeStore, Gtk.TreeModel {
+	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
 		public GLib.HashTable<int,FileNode> fns=new GLib.HashTable<int,FileNode>(null,null);
 		private bool updateon=false;
 		private time_t lastupd=0;
-		public FileTree(string[] args){
+		public void parser_finished(Gtk.Builder builder){
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
-			set_column_types(new GLib.Type[11] {typeof(int),typeof(string),typeof(int64),typeof(string),typeof(int),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string),typeof(string)});
 			set_sort_column_id(2,Gtk.SortType.DESCENDING);
 			for(int i=1;i<args.length;i++) adddir(args[i]);
 		}

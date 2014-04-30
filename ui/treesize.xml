@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-<!--	<object class="TreesizeFileTree" id="filetree">
+	<object class="TreesizeFileTree" id="filetree">
 		<columns>
-			<column type="int"/>
-			<column type="string"/>
-			<column type="int64"/>
-			<column type="string"/>
-			<column type="int"/>
-			<column type="string"/>
-			<column type="string"/>
-			<column type="string"/>
-			<column type="string"/>
-			<column type="string"/>
-			<column type="string"/>
+			<column type="gint"/>
+			<column type="gchararray"/>
+			<column type="gint64"/>
+			<column type="gchararray"/>
+			<column type="gint"/>
+			<column type="gchararray"/>
+			<column type="gchararray"/>
+			<column type="gchararray"/>
+			<column type="gchararray"/>
+			<column type="gchararray"/>
+			<column type="gchararray"/>
 		</columns>
-	</object>-->
+		<signal name="setcur" handler="treesize_treesize_on_setcur" swapped="yes"/>
+	</object>
 	<object class="GtkMenu" id="menu">
         <property name="visible">True</property>
 		<property name="can_focus">False</property>
@@ -130,7 +131,7 @@
         				<property name="visible">True</property>
 						<child>
 							<object class="GtkTreeView" id="treesize-tv">
-								<!--<property name="model">filetree</property>-->
+								<property name="model">filetree</property>
         						<property name="visible">True</property>
                 				<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
 								<child>
