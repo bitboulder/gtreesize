@@ -71,7 +71,7 @@
 				<property name="can_focus">False</property>
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
-				<signal name="activate" handler="treesize_treesize_on_quit" swapped="yes"/>
+				<signal name="activate" handler="gtk_main_quit" swapped="yes"/>
 			</object>
 		</child>
 	</object>
@@ -198,17 +198,6 @@
         				<property name="visible">True</property>
 				        <property name="can_focus">False</property>
 						<property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
-						<child>
-							<object class="GtkButton" id="treesize-btn-refresh">
-        						<property name="visible">True</property>
-						        <property name="can_focus">True</property>
-								<property name="use_stock">True</property>
-								<property name="label">gtk-refresh</property>
-								<property name="always_show_image">True</property>
-								<accelerator key="r" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-                				<signal name="clicked" handler="treesize_treesize_on_refresh" swapped="yes"/>
-							</object>
-						</child>
 						<child>
 							<object class="GtkButton" id="treesize-btn-add">
         						<property name="visible">True</property>
