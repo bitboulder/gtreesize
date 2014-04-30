@@ -45,9 +45,7 @@ namespace Treesize {
 
 		public Treesize(){}
 		public void parser_finished(Gtk.Builder builder){
-			//fc=builder.get_object("fc") as Gtk.FileChooserDialog;
-			fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
-				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT); // TODO -> xml
+			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			// FileTree
 			tm=new FileTree(args);
 			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});

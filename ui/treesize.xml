@@ -77,6 +77,42 @@
 	</object>
 	<object class="GtkFileChooserDialog" id="fc">
 		<property name="title">Add Directory</property>
+		<property name="action">GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER</property>
+		<child internal-child="vbox">
+			<object class="GtkBox" id="fc-box">
+				<child>
+					<placeholder/>
+				</child>
+				<child internal-child="action_area">
+					<object class="GtkButtonBox" id="fc-bbox">
+						<child>
+							<object class="GtkButton" id="fc-cancel">
+				        		<property name="visible">True</property>
+								<property name="can_focus">True</property>
+								<property name="use_stock">True</property>
+								<property name="label">gtk-cancel</property>
+								<property name="always_show_image">True</property>
+								<accelerator key="w" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="fc-add">
+				        		<property name="visible">True</property>
+								<property name="can_focus">True</property>
+								<property name="use_stock">True</property>
+								<property name="label">gtk-add</property>
+								<property name="always_show_image">True</property>
+								<accelerator key="a" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+		<action-widgets>
+			<action-widget response="-6">fc-cancel</action-widget> <!-- TODO: GTK_RESPONSE_CANCEL -->
+			<action-widget response="-3">fc-add</action-widget>    <!-- TODO: GTK_RESPONSE_ACCEPT -->
+		</action-widgets>
 	</object>
 	<object class="TreesizeTreesize" id="treesize">
         <property name="visible">True</property>
