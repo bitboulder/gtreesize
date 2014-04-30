@@ -46,9 +46,9 @@ namespace Treesize {
 
 		public Treesize(){}
 		public void parser_finished(Gtk.Builder builder){
-			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
+			//fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
-				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT);
+				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT); // TODO -> xml
 			// FileTree
 			tm=new FileTree(args);
 			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});
@@ -56,21 +56,21 @@ namespace Treesize {
 			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.model=tm;
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
-			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{
+			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{ // TODO -> xml
 				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
 				string fn; tm.get(iter,1,out fn);
 				uchar[] data=(uchar[])fn.to_utf8(); data.length++;
 				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
 			});
-			tv.get_selection().changed.connect(on_sel_chg);
+			tv.get_selection().changed.connect(on_sel_chg); // TODO -> xml
 			// Menu
 			mu=builder.get_object("menu") as Gtk.Menu;
-			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem);
-			mu_one_sel.prepend(builder.get_object("menu-delete") as Gtk.MenuItem);
+			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem); // TODO -> xml
+			mu_one_sel.prepend(builder.get_object("menu-delete") as Gtk.MenuItem); // TODO -> xml
 			on_sel_chg(tv.get_selection());
 			// Cursor
-			cur_def=get_window().get_cursor();
-			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
+			cur_def=get_window().get_cursor(); // TODO -> xml
+			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH); // TODO -> xml
 			// Finish
 			builder.connect_signals(this);
 			show_all();
