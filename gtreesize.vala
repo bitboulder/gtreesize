@@ -22,13 +22,14 @@
  */
 
 namespace Treesize {
-	public static int main (string[] args)
+	static string[] args;
+	public static int main (string[] _args)
 	{
-		Gtk.init(ref args);
+		Gtk.init(ref _args);
+		args=_args;
 		GLib.Environment.set_application_name("gTreesize");
 		var tmp=new Treesize(); tmp.destroy();
-		var ts=Treesize.create(args);
-		ts.show_all();
+		new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
 		Gtk.main();
 		return 0;
 	}
@@ -37,18 +38,13 @@ namespace Treesize {
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
-		public static Treesize create(string[] args){
-			builder.expose_object("treesize-args",args);
-			var builder=new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
+		public void parser_finished(Gtk.Builder builder){
 			var ts=builder.get_object("treesize") as Treesize;
 			var tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.model=new FileTree(args);
 			if(args.length<2) ts.on_add();
-			return builder.get_object("treesize") as Treesize;
-		}
-		public void parser_finished(Gtk.Builder builder){
-			var args=builder.get_object("treesize-args") as string[];
 			builder.connect_signals(this);
+			ts.show_all();
 		}
 		public Treesize(){}
 /*		public Treesize(string[] args){
