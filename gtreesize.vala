@@ -38,17 +38,23 @@ namespace Treesize {
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
-		public void parser_finished(Gtk.Builder builder){
-			var tv=builder.get_object("treesize-tv") as Gtk.TreeView;
-			tv.model=new FileTree(args);
-			if(args.length<2) ts.on_add();
-			builder.connect_signals(this);
-			show_all();
-		}
+
+		private Gtk.FileChooserDialog fc;
+		private FileTree tm;
+		private Gtk.TreeView tv;
+		private Gtk.Menu mu;
+
 		public Treesize(){}
-/*		public Treesize(string[] args){
-			// TreeView
+		public void parser_finished(Gtk.Builder builder){
+			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
+			fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
+				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT);
+			// FileTree
+			tm=new FileTree(args);
 			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});
+			// TreeView
+			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
+			tv.model=tm;
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
 			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{
 				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
@@ -56,40 +62,28 @@ namespace Treesize {
 				uchar[] data=(uchar[])fn.to_utf8(); data.length++;
 				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
 			});
-			// Menu
-			var fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
-				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT);
-			mu_one_sel=new GLib.List<Gtk.MenuItem>();
-			var mu=new Gtk.Menu();
-			mu_one_sel.prepend(createmi("gtk-open",mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
-			mu_one_sel.prepend(createmi("gtk-delete",mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
-			createmi("gtk-refresh",mu).activate.connect(()=>{ tm.refresh(tv.get_selection()); });
-			mu.append(new Gtk.SeparatorMenuItem());
-			createmi("gtk-add",mu).activate.connect(()=>{ tm.seldir(fc); });
-			createmi("gtk-quit",mu).activate.connect(Gtk.main_quit);
-			mu.show_all();
-			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
 			tv.get_selection().changed.connect(on_sel_chg);
+			// Menu
+			mu=builder.get_object("menu") as Gtk.Menu;
+			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem);
+			mu_one_sel.prepend(builder.get_object("menu-delete") as Gtk.MenuItem);
 			on_sel_chg(tv.get_selection());
-			// Window
-//			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
 			// Cursor
 			cur_def=get_window().get_cursor();
 			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
 			// Finish
-		}*/
-		protected void on_refresh(){
-			stdout.printf("HALLO 1\n");
-			//tm.refresh(null);
+			builder.connect_signals(this);
+			show_all();
+			if(args.length<2) on_add();
 		}
-		protected void on_add(){
-			stdout.printf("HALLO\n");
-			//tm.seldir(fc)
-		}
-		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu){
-			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);
-			mu.append(mi);
-			return mi;
+		protected void on_refresh(){ tm.refresh(null); }
+		protected void on_add(){     tm.seldir(fc); }
+		protected void on_open(){    tm.runcmd("xdg-open",tv.get_selection()); }
+		protected void on_delete(){  tm.runcmd("rm -rf",  tv.get_selection()); }
+		protected bool on_menu(Gdk.EventButton ev){
+			if(ev.button!=3) return false;
+			mu.popup(null,null,null,ev.button,Gtk.get_current_event_time());
+			return true;
 		}
 		private void on_sel_chg(Gtk.TreeSelection s){
 			int n=s.count_selected_rows();
