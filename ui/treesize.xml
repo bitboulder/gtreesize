@@ -184,6 +184,11 @@
 										</child>
 									</object>
 								</child>
+								<child internal-child="selection">
+									<object class="GtkTreeSelection" id="treesize-tv-sel">
+										<signal name="changed" handler="treesize_treesize_on_sel_chg" swapped="yes"/>
+									</object>
+								</child>
 							</object>
 						</child>
 					</object>

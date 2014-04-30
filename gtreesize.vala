@@ -61,7 +61,6 @@ namespace Treesize {
 				uchar[] data=(uchar[])fn.to_utf8(); data.length++;
 				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
 			});
-			tv.get_selection().changed.connect(on_sel_chg); // TODO -> xml
 			// Menu
 			mu=builder.get_object("menu") as Gtk.Menu;
 			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem); // TODO -> xml
@@ -84,7 +83,7 @@ namespace Treesize {
 			mu.popup(null,null,null,ev.button,Gtk.get_current_event_time());
 			return true;
 		}
-		private void on_sel_chg(Gtk.TreeSelection s){
+		protected void on_sel_chg(Gtk.TreeSelection s){
 			int n=s.count_selected_rows();
 			foreach(var i in mu_one_sel) i.sensitive=(n==1);
 		}
