@@ -22,90 +22,68 @@
  */
 
 namespace Treesize {
-	public static int main (string[] args)
+	static string[] args;
+	public static int main (string[] _args)
 	{
-		Gtk.init(ref args);
+		Gtk.init(ref _args);
+		args=_args;
 		GLib.Environment.set_application_name("gTreesize");
-		new Treesize(args);
+		var tmp=new Treesize(); tmp.destroy();
+		new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
 		Gtk.main();
 		return 0;
 	}
-	public class Treesize : Gtk.Window {
+	public class Treesize : Gtk.Window, Gtk.Buildable {
 		private GLib.List<Gtk.MenuItem> mu_one_sel;
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
-		public Treesize(string[] args){
-			// CellRenderer
-			var trs=new Gtk.CellRendererText();
-			var trp=new Gtk.CellRendererProgress();
-			var trf=new Gtk.CellRendererText();
-			var tc=new Gtk.TreeViewColumn();
-			tc.set_title("File");
-			tc.pack_start(trs,false); tc.add_attribute(trs,"text",3);
-			tc.pack_start(trp,false); tc.add_attribute(trp,"value",4);
-			tc.pack_start(trf,false); tc.add_attribute(trf,"text",5);
-			// TreeView
-			var tm=new FileTree(args);
+
+		private Gtk.FileChooserDialog fc;
+		private FileTree tm;
+		private Gtk.TreeView tv;
+		private Gtk.Menu mu;
+
+		public Treesize(){}
+		public void parser_finished(Gtk.Builder builder){
+			//fc=builder.get_object("fc") as Gtk.FileChooserDialog;
+			fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
+				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT); // TODO -> xml
+			// FileTree
+			tm=new FileTree(args);
 			tm.setcur.connect((wait)=>{get_window().set_cursor(wait?cur_wait:cur_def);});
-			var tv=new Gtk.TreeView.with_model(tm);
-			tv.append_column(tc);
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("MTime",new Gtk.CellRendererText(),"text",6));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Mode",new Gtk.CellRendererText(),"text",7));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Owner",new Gtk.CellRendererText(),"text",8));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Group",new Gtk.CellRendererText(),"text",9));
-			tv.append_column(new Gtk.TreeViewColumn.with_attributes("Size",new Gtk.CellRendererText(),"text",10));
+			// TreeView
+			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
+			tv.model=tm;
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
-			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{
+			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{ // TODO -> xml
 				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
 				string fn; tm.get(iter,1,out fn);
 				uchar[] data=(uchar[])fn.to_utf8(); data.length++;
 				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
 			});
-			// ScrolledWindow
-			var sc=new Gtk.ScrolledWindow(null,null);
-			sc.add_with_viewport(tv);
+			tv.get_selection().changed.connect(on_sel_chg); // TODO -> xml
 			// Menu
-			var fc=new Gtk.FileChooserDialog("Add Directory",this,Gtk.FileChooserAction.SELECT_FOLDER,
-				"gtk-cancel",Gtk.ResponseType.CANCEL,"gtk-add",Gtk.ResponseType.ACCEPT);
-			mu_one_sel=new GLib.List<Gtk.MenuItem>();
-			var mu=new Gtk.Menu();
-			mu_one_sel.prepend(createmi("gtk-open",mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("xdg-open",tv.get_selection()); });
-			mu_one_sel.prepend(createmi("gtk-delete",mu)); mu_one_sel.first().data.activate.connect(()=>{ tm.runcmd("rm -rf",tv.get_selection()); });
-			createmi("gtk-refresh",mu).activate.connect(()=>{ tm.refresh(tv.get_selection()); });
-			mu.append(new Gtk.SeparatorMenuItem());
-			createmi("gtk-add",mu).activate.connect(()=>{ tm.seldir(fc); });
-			createmi("gtk-quit",mu).activate.connect(Gtk.main_quit);
-			mu.show_all();
-			tv.button_press_event.connect((ev)=>{ if(ev.button!=3) return false; mu.popup(null,null,null,ev.button,Gtk.get_current_event_time()); return true; });
-			tv.get_selection().changed.connect(on_sel_chg);
+			mu=builder.get_object("menu") as Gtk.Menu;
+			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem); // TODO -> xml
+			mu_one_sel.prepend(builder.get_object("menu-delete") as Gtk.MenuItem); // TODO -> xml
 			on_sel_chg(tv.get_selection());
-			// Buttons
-			Gtk.Button btn;
-			var but=new Gtk.ButtonBox(Gtk.Orientation.HORIZONTAL);
-			but.add(btn=new Gtk.Button.from_stock("gtk-refresh")); btn.clicked.connect(()=>{ tm.refresh(null); });
-			but.add(btn=new Gtk.Button.from_stock("gtk-add"));     btn.clicked.connect(()=>{ tm.seldir(fc);    });
-			but.add(btn=new Gtk.Button.from_stock("gtk-quit"));    btn.clicked.connect(Gtk.main_quit);
-			// VBox
-			var box=new Gtk.Box(Gtk.Orientation.VERTICAL,0);
-			box.pack_start(sc,true,true,0);
-			box.pack_start(but,false,false,0);
-			// Window
-			add(box);
-			set_default_size(700,700);
-			delete_event.connect((ev)=>{ Gtk.main_quit(); return true; });
-			key_press_event.connect((ev)=>{ if(ev.keyval==113 && ev.state==Gdk.ModifierType.CONTROL_MASK) Gtk.main_quit(); return true; });
-			show_all();
 			// Cursor
-			cur_def=get_window().get_cursor();
-			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH);
+			cur_def=get_window().get_cursor(); // TODO -> xml
+			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH); // TODO -> xml
 			// Finish
-			if(args.length<2) tm.seldir(fc);
+			builder.connect_signals(this);
+			show_all();
+			if(args.length<2) on_add();
 		}
-		private Gtk.MenuItem createmi(string stock_id,Gtk.Menu mu){
-			var mi=new Gtk.ImageMenuItem.from_stock(stock_id,null);
-			mu.append(mi);
-			return mi;
+		protected void on_refresh(){ tm.refresh(null); }
+		protected void on_add(){     tm.seldir(fc); }
+		protected void on_open(){    tm.runcmd("xdg-open",tv.get_selection()); }
+		protected void on_delete(){  tm.runcmd("rm -rf",  tv.get_selection()); }
+		protected bool on_menu(Gdk.EventButton ev){
+			if(ev.button!=3) return false;
+			mu.popup(null,null,null,ev.button,Gtk.get_current_event_time());
+			return true;
 		}
 		private void on_sel_chg(Gtk.TreeSelection s){
 			int n=s.count_selected_rows();
