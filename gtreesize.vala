@@ -38,14 +38,12 @@ namespace Treesize {
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
 
-		private Gtk.FileChooserDialog fc;
 		private FileTree tm;
 		private Gtk.TreeView tv;
 		private Gtk.Menu mu;
 
 		public Treesize(){}
 		public void parser_finished(Gtk.Builder builder){
-			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			// FileTree
 			tm=builder.get_object("filetree") as FileTree;
 			// TreeView
@@ -69,10 +67,8 @@ namespace Treesize {
 			// Finish
 			builder.connect_signals(this);
 			show();
-			if(args.length<2) on_add();
 		}
 		protected void on_refresh(){ tm.refresh(null); }
-		protected void on_add(){     tm.seldir(fc); }
 		protected void on_open(){    tm.runcmd("xdg-open",tv.get_selection()); }
 		protected void on_delete(){  tm.runcmd("rm -rf",  tv.get_selection()); }
 		protected bool on_menu(Gdk.EventButton ev){
@@ -112,13 +108,16 @@ namespace Treesize {
 		public GLib.HashTable<int,FileNode> fns=new GLib.HashTable<int,FileNode>(null,null);
 		private bool updateon=false;
 		private time_t lastupd=0;
+		private Gtk.FileChooserDialog fc;
 		public void parser_finished(Gtk.Builder builder){
+			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
 			set_sort_column_id(2,Gtk.SortType.DESCENDING);
 			for(int i=1;i<args.length;i++) adddir(args[i]);
+			if(args.length<2) seldir();
 		}
-		public void seldir(Gtk.FileChooserDialog fc){
+		protected void seldir(){
 			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename());
 			fc.hide();
 		}

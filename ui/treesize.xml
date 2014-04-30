@@ -62,7 +62,7 @@
 				<property name="can_focus">False</property>
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
-				<signal name="activate" handler="treesize_treesize_on_add" swapped="yes"/>
+				<signal name="activate" handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
 			</object>
 		</child>
 		<child>
@@ -248,7 +248,7 @@
 								<property name="label">gtk-add</property>
 								<property name="always_show_image">True</property>
 								<accelerator key="a" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-                				<signal name="clicked" handler="treesize_treesize_on_add" swapped="yes"/>
+								<signal name="clicked" handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
 							</object>
 						</child>
 						<child>
