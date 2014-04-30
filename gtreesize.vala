@@ -38,14 +38,16 @@ namespace Treesize {
 		private Gdk.Cursor cur_def;
 		private Gdk.Cursor cur_wait;
 		public static Treesize create(string[] args){
+			builder.expose_object("treesize-args",args);
 			var builder=new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
 			var ts=builder.get_object("treesize") as Treesize;
 			var tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.model=new FileTree(args);
 			if(args.length<2) ts.on_add();
-			return ts;
+			return builder.get_object("treesize") as Treesize;
 		}
 		public void parser_finished(Gtk.Builder builder){
+			var args=builder.get_object("treesize-args") as string[];
 			builder.connect_signals(this);
 		}
 		public Treesize(){}
