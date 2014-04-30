@@ -27,6 +27,7 @@
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="treesize_treesize_on_open" swapped="yes"/>
+				<accelerator key="o" signal="activate" modifiers="GDK_CONTROL_MASK"/>
 			</object>
 		</child>
 		<child>
@@ -37,6 +38,7 @@
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="treesize_treesize_on_delete" swapped="yes"/>
+				<accelerator key="Delete" signal="activate"/>
 			</object>
 		</child>
 		<child>
@@ -53,6 +55,7 @@
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="treesize_treesize_on_refresh" swapped="yes"/>
+				<accelerator key="r" signal="activate" modifiers="GDK_CONTROL_MASK"/>
 			</object>
 		</child>
 		<child>
@@ -63,6 +66,7 @@
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
+				<accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
 			</object>
 		</child>
 		<child>
@@ -73,6 +77,7 @@
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="gtk_main_quit" swapped="yes"/>
+				<accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
 			</object>
 		</child>
 	</object>
@@ -120,157 +125,126 @@
 		<property name="can_focus">False</property>
 		<property name="default_width">700</property>
 		<property name="default_height">700</property>
-		<signal name="destroy" handler="gtk_main_quit" swapped="yes"/>
+		<accelerator key="o" signal="acc_open" modifiers="GDK_CONTROL_MASK"/>
+		<accelerator key="Delete" signal="acc_del"/>
+		<accelerator key="r" signal="acc_upd"  modifiers="GDK_CONTROL_MASK"/>
+		<accelerator key="a" signal="acc_add"  modifiers="GDK_CONTROL_MASK"/>
+		<accelerator key="w" signal="acc_quit" modifiers="GDK_CONTROL_MASK"/>
+		<accelerator key="q" signal="acc_quit" modifiers="GDK_CONTROL_MASK"/>
+		<signal name="destroy"  handler="gtk_main_quit"             swapped="yes"/>
+		<signal name="acc_open" handler="treesize_treesize_on_open" swapped="yes"/>
+		<signal name="acc_del"  handler="treesize_treesize_on_del"  swapped="yes"/>
+		<signal name="acc_upd"  handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
+		<signal name="acc_add"  handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
+		<signal name="acc_quit" handler="gtk_main_quit"             swapped="yes"/>
 		<child>
-			<object class="GtkBox" id="treesize-box">
-        		<property name="visible">True</property>
-		        <property name="can_focus">False</property>
-				<property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+			<object class="GtkScrolledWindow" id="treesize-sc">
+				<property name="visible">True</property>
 				<child>
-					<object class="GtkScrolledWindow" id="treesize-sc">
-        				<property name="visible">True</property>
+					<object class="GtkTreeView" id="treesize-tv">
+						<property name="model">filetree</property>
+						<property name="visible">True</property>
+						<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
 						<child>
-							<object class="GtkTreeView" id="treesize-tv">
-								<property name="model">filetree</property>
-        						<property name="visible">True</property>
-                				<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
+							<object class="GtkTreeViewColumn" id="treesize-tv-c-file">
+								<property name="title">File</property>
 								<child>
-									<object class="GtkTreeViewColumn" id="treesize-tv-c-file">
-										<property name="title">File</property>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-file-size"/>
-											<attributes>
-												<attribute name="text">3</attribute>
-											</attributes>
-											<!--<packing>
-												<property name="expand">False</property>
-											</packing>-->
-										</child>
-										<child>
-											<object class="GtkCellRendererProgress" id="treesize-tv-cr-file-prg"/>
-											<attributes>
-												<attribute name="value">4</attribute>
-											</attributes>
-											<!--<packing>
-												<property name="expand">False</property>
-											</packing>-->
-										</child>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-file-name"/>
-											<attributes>
-												<attribute name="text">5</attribute>
-											</attributes>
-											<!--<packing>
-												<property name="expand">False</property>
-											</packing>-->
-										</child>
-									</object>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-file-size"/>
+									<attributes>
+										<attribute name="text">3</attribute>
+									</attributes>
+									<!--<packing>
+										<property name="expand">False</property>
+									</packing>-->
 								</child>
 								<child>
-									<object class="GtkTreeViewColumn" id="treesize-tv-c-mtime">
-										<property name="title">MTime</property>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-mtime"/>
-											<attributes>
-												<attribute name="text">6</attribute>
-											</attributes>
-										</child>
-									</object>
+									<object class="GtkCellRendererProgress" id="treesize-tv-cr-file-prg"/>
+									<attributes>
+										<attribute name="value">4</attribute>
+									</attributes>
+									<!--<packing>
+										<property name="expand">False</property>
+									</packing>-->
 								</child>
 								<child>
-									<object class="GtkTreeViewColumn" id="treesize-tv-c-mode">
-										<property name="title">Mode</property>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-mode"/>
-											<attributes>
-												<attribute name="text">7</attribute>
-											</attributes>
-										</child>
-									</object>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-file-name"/>
+									<attributes>
+										<attribute name="text">5</attribute>
+									</attributes>
+									<!--<packing>
+										<property name="expand">False</property>
+									</packing>-->
 								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkTreeViewColumn" id="treesize-tv-c-mtime">
+								<property name="title">MTime</property>
 								<child>
-									<object class="GtkTreeViewColumn" id="treesize-tv-c-owner">
-										<property name="title">Owner</property>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-owner"/>
-											<attributes>
-												<attribute name="text">8</attribute>
-											</attributes>
-										</child>
-									</object>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-mtime"/>
+									<attributes>
+										<attribute name="text">6</attribute>
+									</attributes>
 								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkTreeViewColumn" id="treesize-tv-c-mode">
+								<property name="title">Mode</property>
 								<child>
-									<object class="GtkTreeViewColumn" id="treesize-tv-c-group">
-										<property name="title">Group</property>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-group"/>
-											<attributes>
-												<attribute name="text">9</attribute>
-											</attributes>
-										</child>
-									</object>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-mode"/>
+									<attributes>
+										<attribute name="text">7</attribute>
+									</attributes>
 								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkTreeViewColumn" id="treesize-tv-c-owner">
+								<property name="title">Owner</property>
 								<child>
-									<object class="GtkTreeViewColumn" id="treesize-tv-c-size">
-										<property name="title">Size</property>
-										<child>
-											<object class="GtkCellRendererText" id="treesize-tv-cr-size"/>
-											<attributes>
-												<attribute name="text">10</attribute>
-											</attributes>
-										</child>
-									</object>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-owner"/>
+									<attributes>
+										<attribute name="text">8</attribute>
+									</attributes>
 								</child>
-								<child internal-child="selection">
-									<object class="GtkTreeSelection" id="treesize-tv-sel">
-										<signal name="changed" handler="treesize_treesize_on_sel_chg" swapped="yes"/>
-									</object>
+							</object>
+						</child>
+						<child>
+							<object class="GtkTreeViewColumn" id="treesize-tv-c-group">
+								<property name="title">Group</property>
+								<child>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-group"/>
+									<attributes>
+										<attribute name="text">9</attribute>
+									</attributes>
 								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkTreeViewColumn" id="treesize-tv-c-size">
+								<property name="title">Size</property>
+								<child>
+									<object class="GtkCellRendererText" id="treesize-tv-cr-size"/>
+									<attributes>
+										<attribute name="text">10</attribute>
+									</attributes>
+								</child>
+							</object>
+						</child>
+						<child internal-child="selection">
+							<object class="GtkTreeSelection" id="treesize-tv-sel">
+								<signal name="changed" handler="treesize_treesize_on_sel_chg" swapped="yes"/>
 							</object>
 						</child>
 					</object>
-					<packing>
-						<property name="expand">True</property>
-						<property name="fill">True</property>
-						<property name="position">0</property>
-					</packing>
-				</child>
-				<child>
-					<object class="GtkButtonBox" id="treesize-bbox">
-        				<property name="visible">True</property>
-				        <property name="can_focus">False</property>
-						<property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
-						<child>
-							<object class="GtkButton" id="treesize-btn-add">
-        						<property name="visible">True</property>
-						        <property name="can_focus">True</property>
-								<property name="use_stock">True</property>
-								<property name="label">gtk-add</property>
-								<property name="always_show_image">True</property>
-								<accelerator key="a" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-								<signal name="clicked" handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
-							</object>
-						</child>
-						<child>
-							<object class="GtkButton" id="treesize-btn-quit">
-        						<property name="visible">True</property>
-						        <property name="can_focus">True</property>
-								<property name="use_stock">True</property>
-								<property name="label">gtk-quit</property>
-								<property name="always_show_image">True</property>
-								<accelerator key="w" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-								<accelerator key="q" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
-                				<signal name="clicked" handler="gtk_main_quit" swapped="yes"/>
-							</object>
-						</child>
-					</object>
-					<packing>
-						<property name="expand">False</property>
-						<property name="fill">False</property>
-						<property name="position">1</property>
-					</packing>
 				</child>
 			</object>
+			<packing>
+				<property name="expand">True</property>
+				<property name="fill">True</property>
+				<property name="position">0</property>
+			</packing>
 		</child>
 	</object>
 </interface>

@@ -33,6 +33,12 @@ namespace Treesize {
 		return 0;
 	}
 	public class Treesize : Gtk.Window, Gtk.Buildable {
+		[ Signal ( action = true ) ] public signal void acc_open();
+		[ Signal ( action = true ) ] public signal void acc_del();
+		[ Signal ( action = true ) ] public signal void acc_upd();
+		[ Signal ( action = true ) ] public signal void acc_quit();
+		[ Signal ( action = true ) ] public signal void acc_add();
+
 		private GLib.List<Gtk.MenuItem> mu_one_sel;
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
 		private Gdk.Cursor cur_def;
