@@ -48,7 +48,6 @@ namespace Treesize {
 			tm=builder.get_object("filetree") as FileTree;
 			// TreeView
 			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
-			tv.model=tm;
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
 			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{ // TODO -> xml
 				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
