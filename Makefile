@@ -46,5 +46,5 @@ resources.o: resources.c Makefile
 gtreesize.c: gtreesize.vala Makefile
 	valac $(VFLAGS) -C gtreesize.vala
 
-resources.c: resources.gresource.xml ui/treesize.xml
+resources.c: resources.gresource.xml gtreesize.xml
 	glib-compile-resources --generate-source resources.gresource.xml

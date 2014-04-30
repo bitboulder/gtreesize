@@ -28,7 +28,7 @@ namespace Treesize {
 		args=_args;
 		GLib.Environment.set_application_name("gTreesize");
 		var tmp=new Treesize(); tmp.destroy();
-		new Gtk.Builder.from_resource("/org/gtreesize/ui/treesize.xml");
+		new Gtk.Builder.from_resource("/org/gtreesize/gtreesize.xml");
 		Gtk.main();
 		return 0;
 	}

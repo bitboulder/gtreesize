@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
 	<gresource prefix="/org/gtreesize">
-		<file preprocess="xml-stripblanks" compressed="true">ui/treesize.xml</file>
+		<file preprocess="xml-stripblanks" compressed="true">gtreesize.xml</file>
 	</gresource>
 </gresources>
