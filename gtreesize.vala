@@ -23,8 +23,7 @@
 
 namespace Treesize {
 	static string[] args;
-	public static int main (string[] _args)
-	{
+	public static int main(string[] _args){
 		Gtk.init(ref _args);
 		args=_args;
 		GLib.Environment.set_application_name("gTreesize");
@@ -193,6 +192,7 @@ namespace Treesize {
 	public class FileNode {
 		private GLib.File    fi;
 		private FileTree     ft;
+		private FileMonitor  fm;
 		private Gtk.TreeIter it;
 		private GLib.HashTable<string,FileNode> ch;
 		private FileNode?    pa;
@@ -280,11 +280,9 @@ namespace Treesize {
 				}
 				Timer.timer(1,1);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
-					stdout.printf("mon: %s\n",fi.get_path());
-					var fm=fi.monitor_directory(FileMonitorFlags.NONE,null); /* TODO: monitor_directory */
+					fm=fi.monitor_directory(FileMonitorFlags.NONE,null);
 					fm.changed.connect((file,otherfile,evtype)=>{
-						stdout.printf("chg: %s %s\n",evtype.to_string(),file.get_path());
-//						ft.updfile.insert(this);
+						ft.updfile.insert(this);
 					});
 				}
 				Timer.timer(1,2);
