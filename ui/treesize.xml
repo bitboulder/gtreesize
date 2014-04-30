@@ -91,9 +91,11 @@
 				<property name="orientation">GTK_ORIENTATION_VERTICAL</property>
 				<child>
 					<object class="GtkScrolledWindow" id="treesize-sc">
+        				<property name="visible">True</property>
 						<child>
 							<object class="GtkTreeView" id="treesize-tv">
 								<!--<property name="model">filetree</property>-->
+        						<property name="visible">True</property>
                 				<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
 								<child>
 									<object class="GtkTreeViewColumn" id="treesize-tv-c-file">

@@ -72,7 +72,7 @@ namespace Treesize {
 			cur_wait=new Gdk.Cursor(Gdk.CursorType.WATCH); // TODO -> xml
 			// Finish
 			builder.connect_signals(this);
-			show_all();
+			show();
 			if(args.length<2) on_add();
 		}
 		protected void on_refresh(){ tm.refresh(null); }
