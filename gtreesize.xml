@@ -2,17 +2,17 @@
 <interface>
 	<object class="TreesizeFileTree" id="filetree">
 		<columns>
-			<column type="gint"/>
-			<column type="gchararray"/>
-			<column type="gint64"/>
-			<column type="gchararray"/>
-			<column type="gint"/>
-			<column type="gchararray"/>
-			<column type="gchararray"/>
-			<column type="gchararray"/>
-			<column type="gchararray"/>
-			<column type="gchararray"/>
-			<column type="gchararray"/>
+			<column type="gint"/>       <!-- id       -->
+			<column type="gchararray"/> <!-- fn       -->
+			<column type="gint64"/>     <!-- ssi (total size) for sort      -->
+			<column type="gchararray"/> <!-- virtual: ssi (total size)      -->
+			<column type="gint"/>       <!-- virtual: spi (percentage size) -->
+			<column type="gchararray"/> <!-- basename -->
+			<column type="gchararray"/> <!-- mtime    -->
+			<column type="gchararray"/> <!-- mode     -->
+			<column type="gchararray"/> <!-- user     -->
+			<column type="gchararray"/> <!-- group    -->
+			<column type="gchararray"/> <!-- size     -->
 		</columns>
 		<signal name="setcur" handler="treesize_treesize_on_setcur" swapped="yes"/>
 	</object>
