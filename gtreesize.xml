@@ -146,6 +146,7 @@
 						<property name="visible">True</property>
 						<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
 						<signal name="drag_data_get" handler="treesize_treesize_on_drag_get" swapped="yes"/>
+						<signal name="drag_data_received" handler="treesize_treesize_on_drag_rec" swapped="yes"/>
 						<child>
 							<object class="GtkTreeViewColumn" id="treesize-tv-c-file">
 								<property name="title">File</property>

@@ -55,6 +55,7 @@ namespace Treesize {
 			// TreeView
 			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
+			tv.enable_model_drag_dest(_dragtarget,Gdk.DragAction.COPY);
 			// Menu
 			mu=builder.get_object("menu") as Gtk.Menu;
 			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem); // TODO -> xml
@@ -85,8 +86,11 @@ namespace Treesize {
 		protected void on_drag_get(Gdk.DragContext ctx,Gtk.SelectionData sdat,uint info,uint time){
 			Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
 			string fn; tm.get(iter,1,out fn);
-			uchar[] data=(uchar[])fn.to_utf8();
-			sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
+			sdat.set_text(fn,fn.length);
+		}
+		protected void on_drag_rec(Gdk.DragContext ctx,int x,int y,Gtk.SelectionData sdat,uint info,uint time){
+			string? fn=sdat.get_text();
+			if(fn!=null) tm.adddir(fn);
 		}
 	}
 
@@ -126,7 +130,7 @@ namespace Treesize {
 			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename());
 			fc.hide();
 		}
-		private void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
+		public void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vid; base.get_value(it,0,out vid);
 			int id=vid.get_int();
