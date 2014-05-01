@@ -85,7 +85,7 @@ namespace Treesize {
 		}
 		protected void on_drag_get(Gdk.DragContext ctx,Gtk.SelectionData sdat,uint info,uint time){
 			Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
-			string fn; tm.get(iter,1,out fn);
+			string fn=tm.get_fn(iter);
 			sdat.set_text(fn,fn.length);
 		}
 		protected void on_drag_rec(Gdk.DragContext ctx,int x,int y,Gtk.SelectionData sdat,uint info,uint time){
@@ -111,6 +111,7 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
+		public enum Col { ID,FN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
@@ -122,9 +123,9 @@ namespace Treesize {
 			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
-			set_sort_column_id(2,Gtk.SortType.DESCENDING);
-			for(int i=1;i<args.length;i++) adddir(args[i]);
+			set_sort_column_id(Col.SSI,Gtk.SortType.DESCENDING);
 			if(args.length<2) seldir();
+			else for(int i=1;i<args.length;i++) adddir(args[i]);
 		}
 		protected void seldir(){
 			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename());
@@ -132,27 +133,32 @@ namespace Treesize {
 		}
 		public void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
-			GLib.Value vid; base.get_value(it,0,out vid);
+			GLib.Value vid; base.get_value(it,Col.ID,out vid);
 			int id=vid.get_int();
 			return (fn= id==0 ? null : fns.lookup(id))!=null;
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
-			if(column<3 || column>4){
+			if(column!=Col.RSSI && column!=Col.RSPI){
 				base.get_value(iter,column,out val);
 			}else{
 				FileNode fn;
 				if(it2fn(iter,out fn) && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
 				switch(column){
-				case 3:
+				case Col.RSSI:
 					val=Value(typeof(string));
 					if(fn!=null) val.set_string(fn.rnd_ssi());
 				break;
-				case 4:
+				case Col.RSPI:
 					val=Value(typeof(int));
 					if(fn!=null) val.set_int(fn.rnd_spi());
 				break;
 				}
 			}
+		}
+		public string get_fn(Gtk.TreeIter iter){
+			string fn;
+			get(iter,Col.FN,out fn);
+			return fn;
 		}
 		public bool update(){
 			Timer.timer(0,-1);
@@ -163,7 +169,7 @@ namespace Treesize {
 			if(!upddpl.empty() && (updfile.empty() || tchg))
 				while(upddpl.pop(out fn)){
 					if(!fn.del){
-						if(fn.get_ssichg()) set(fn.get_it(),2,fn.get_ssi());
+						if(fn.get_ssichg()) set(fn.get_it(),Col.SSI,fn.get_ssi());
 						else row_changed(get_path(fn.get_it()),fn.get_it());
 					}
 				}
@@ -190,7 +196,7 @@ namespace Treesize {
 			Gtk.TreeIter iter;
 			string fn;
 			s.get_selected(null,out iter);
-			get(iter,1,out fn);
+			get(iter,Col.FN,out fn);
 			Posix.system(_cmd+" \""+fn+"\""+"\n");
 		}
 	}
@@ -213,7 +219,10 @@ namespace Treesize {
 			pa=_pa;
 			if(pa==null) ft.append(out it,null);
 			else ft.append(out it,pa.it);
-			ft.set(it,0,ft.fns.size()+1,1,_fn,5,fi.get_basename());
+			ft.set(it,
+				FileTree.Col.ID,ft.fns.size()+1,
+				FileTree.Col.FN,_fn,
+				FileTree.Col.BN,fi.get_basename());
 			ft.fns.set((int)ft.fns.size()+1,this);
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 		}
@@ -264,11 +273,11 @@ namespace Treesize {
 				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
 				TimeVal mtime=i.get_modification_time();
 				ft.set(it,
-					6,rndtime(mtime),
-					7,rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
-					8,i.get_attribute_string(FileAttribute.OWNER_USER),
-					9,i.get_attribute_string(FileAttribute.OWNER_GROUP),
-					10,rndsi(i.get_size()));
+					FileTree.Col.MTIME,rndtime(mtime),
+					FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
+					FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
+					FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
+					FileTree.Col.SIZE, rndsi(i.get_size()));
 				Timer.timer(1,0);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
