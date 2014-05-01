@@ -55,12 +55,6 @@ namespace Treesize {
 			// TreeView
 			tv=builder.get_object("treesize-tv") as Gtk.TreeView;
 			tv.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK,_dragtarget,Gdk.DragAction.COPY);
-			tv.drag_data_get.connect((wdg,ctx,sdat,info,time)=>{ // TODO -> xml
-				Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
-				string fn; tm.get(iter,1,out fn);
-				uchar[] data=(uchar[])fn.to_utf8();
-				sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
-			});
 			// Menu
 			mu=builder.get_object("menu") as Gtk.Menu;
 			mu_one_sel.prepend(builder.get_object("menu-open")   as Gtk.MenuItem); // TODO -> xml
@@ -87,6 +81,12 @@ namespace Treesize {
 		protected void on_sel_chg(Gtk.TreeSelection s){
 			int n=s.count_selected_rows();
 			foreach(var i in mu_one_sel) i.sensitive=(n==1);
+		}
+		protected void on_drag_get(Gdk.DragContext ctx,Gtk.SelectionData sdat,uint info,uint time){
+			Gtk.TreeIter iter; tv.get_selection().get_selected(null,out iter);
+			string fn; tm.get(iter,1,out fn);
+			uchar[] data=(uchar[])fn.to_utf8();
+			sdat.set(Gdk.Atom.intern(_dragtarget[0].target,true),8,data);
 		}
 	}
 
