@@ -37,7 +37,7 @@
 				<property name="can_focus">False</property>
 				<property name="use_stock">True</property>
 				<property name="always_show_image">True</property>
-				<signal name="activate" handler="treesize_treesize_on_delete" swapped="yes"/>
+				<signal name="activate" handler="treesize_treesize_on_del" swapped="yes"/>
 				<accelerator key="Delete" signal="activate"/>
 			</object>
 		</child>
@@ -240,11 +240,6 @@
 					</object>
 				</child>
 			</object>
-			<packing>
-				<property name="expand">True</property>
-				<property name="fill">True</property>
-				<property name="position">0</property>
-			</packing>
 		</child>
 	</object>
 </interface>

@@ -75,7 +75,7 @@ namespace Treesize {
 		}
 		protected void on_refresh(){ tm.refresh(null); }
 		protected void on_open(){    tm.runcmd("xdg-open",tv.get_selection()); }
-		protected void on_delete(){  tm.runcmd("rm -rf",  tv.get_selection()); }
+		protected void on_del(){     tm.runcmd("rm -rf",  tv.get_selection()); }
 		protected bool on_menu(Gdk.EventButton ev){
 			if(ev.button!=3) return false;
 			mu.popup(null,null,null,ev.button,Gtk.get_current_event_time());
