@@ -13,6 +13,9 @@
 			<column type="gchararray"/> <!-- user     -->
 			<column type="gchararray"/> <!-- group    -->
 			<column type="gchararray"/> <!-- size     -->
+			<column type="gint64"/>     <!-- dssi: abs(ssi#1-ssi#2) for sort  -->
+			<column type="gchararray"/> <!-- virtual: ssi#2 (total size)      -->
+			<column type="gint"/>       <!-- virtual: spi#2 (percentage size) -->
 		</columns>
 		<signal name="setcur" handler="treesize_treesize_on_setcur" swapped="yes"/>
 	</object>
@@ -67,6 +70,18 @@
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
 				<accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+			</object>
+		</child>
+		<child>
+			<object class="GtkImageMenuItem" id="menu-diff">
+				<property name="label">Compare</property>
+        		<property name="visible">True</property>
+				<property name="can_focus">False</property>
+				<property name="use_stock">True</property>
+				<!--<property name="image">gtk-convert</property> TODO: image -->
+				<property name="always_show_image">True</property>
+				<signal name="activate" handler="treesize_file_tree_diffdir" swapped="yes" object="filetree"/>
+				<accelerator key="d" signal="activate" modifiers="GDK_CONTROL_MASK"/>
 			</object>
 		</child>
 		<child>
@@ -129,14 +144,16 @@
 		<accelerator key="Delete" signal="acc_del"/>
 		<accelerator key="r" signal="acc_upd"  modifiers="GDK_CONTROL_MASK"/>
 		<accelerator key="a" signal="acc_add"  modifiers="GDK_CONTROL_MASK"/>
+		<accelerator key="d" signal="acc_diff" modifiers="GDK_CONTROL_MASK"/>
 		<accelerator key="w" signal="acc_quit" modifiers="GDK_CONTROL_MASK"/>
 		<accelerator key="q" signal="acc_quit" modifiers="GDK_CONTROL_MASK"/>
-		<signal name="destroy"  handler="gtk_main_quit"             swapped="yes"/>
-		<signal name="acc_open" handler="treesize_treesize_on_open" swapped="yes"/>
-		<signal name="acc_del"  handler="treesize_treesize_on_del"  swapped="yes"/>
-		<signal name="acc_upd"  handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
-		<signal name="acc_add"  handler="treesize_file_tree_seldir" swapped="yes" object="filetree"/>
-		<signal name="acc_quit" handler="gtk_main_quit"             swapped="yes"/>
+		<signal name="destroy"  handler="gtk_main_quit"              swapped="yes"/>
+		<signal name="acc_open" handler="treesize_treesize_on_open"  swapped="yes"/>
+		<signal name="acc_del"  handler="treesize_treesize_on_del"   swapped="yes"/>
+		<signal name="acc_upd"  handler="treesize_file_tree_seldir"  swapped="yes" object="filetree"/>
+		<signal name="acc_add"  handler="treesize_file_tree_seldir"  swapped="yes" object="filetree"/>
+		<signal name="acc_diff" handler="treesize_file_tree_diffdir" swapped="yes" object="filetree"/>
+		<signal name="acc_quit" handler="gtk_main_quit"              swapped="yes"/>
 		<child>
 			<object class="GtkScrolledWindow" id="treesize-sc">
 				<property name="visible">True</property>

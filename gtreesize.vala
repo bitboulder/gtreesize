@@ -36,8 +36,9 @@ namespace Treesize {
 		[ Signal ( action = true ) ] public signal void acc_open();
 		[ Signal ( action = true ) ] public signal void acc_del();
 		[ Signal ( action = true ) ] public signal void acc_upd();
-		[ Signal ( action = true ) ] public signal void acc_quit();
 		[ Signal ( action = true ) ] public signal void acc_add();
+		[ Signal ( action = true ) ] public signal void acc_diff();
+		[ Signal ( action = true ) ] public signal void acc_quit();
 
 		private GLib.List<Gtk.MenuItem> mu_one_sel;
 		private const Gtk.TargetEntry[] _dragtarget = { {"text/plain",0,0} };
@@ -111,7 +112,7 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
-		public enum Col { ID,FN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
+		public enum Col { ID,FN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,DSSI,RSSI2,RSPI2,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
@@ -125,13 +126,17 @@ namespace Treesize {
 			updfile=new Queue(updcheck);
 			set_sort_column_id(Col.SSI,Gtk.SortType.DESCENDING);
 			if(args.length<2) seldir();
-			else for(int i=1;i<args.length;i++) adddir(args[i]);
+			else if(args.length==4 && args[1]=="-d"){
+				adddir(args[2]);
+				adddir(args[3],true);
+			}else for(int i=1;i<args.length;i++) adddir(args[i]);
 		}
-		protected void seldir(){
-			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename());
+		protected void diffdir(){ seldir(true); }
+		protected void seldir(bool diff=false){
+			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename(),diff);
 			fc.hide();
 		}
-		public void adddir(string dirname){ updfile.insert(new FileNode(dirname,this)); }
+		public void adddir(string dirname,bool diff=false){ updfile.insert(new FileNode(dirname,this,null,diff)); }
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vid; base.get_value(it,Col.ID,out vid);
 			int id=vid.get_int();
@@ -202,33 +207,44 @@ namespace Treesize {
 	}
 
 	public class FileNode {
-		private GLib.File    fi;
-		private FileTree     ft;
-		private FileMonitor  fm;
-		private Gtk.TreeIter it;
+		private GLib.File     fi;
+		private FileTree      ft;
+		private FileMonitor   fm;
+		private Gtk.TreeIter? it=null;
 		private GLib.HashTable<string,FileNode> ch;
-		private FileNode?    pa;
-		private int64        si=0;
-		private int64        ssi=0;
-		private bool         ssichg=false;
-		public  bool         vis=false;
-		public  bool         del=false;
-		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null){
+		private FileNode?     pa;
+		private int64         si=0;
+		private int64         ssi=0;
+		private bool          ssichg=false;
+		public  bool          vis=false;
+		public  bool          del=false;
+		private bool          dsec=false;
+		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
-			if(pa==null) ft.append(out it,null);
-			else ft.append(out it,pa.it);
-			ft.set(it,
-				FileTree.Col.ID,ft.fns.size()+1,
-				FileTree.Col.FN,_fn,
-				FileTree.Col.BN,fi.get_basename());
-			ft.fns.set((int)ft.fns.size()+1,this);
+			dsec=_dsec;
+			if(dsec){
+				//TODO: find it for fn
+			}
+			if(it==null){
+				if(pa==null) ft.append(out it,null);
+				else ft.append(out it,pa.it);
+				ft.set(it,
+					FileTree.Col.ID,ft.fns.size()+1,
+					FileTree.Col.FN,_fn,
+					FileTree.Col.BN,fi.get_basename());
+			}
+			if(!dsec){
+				ft.fns.set((int)ft.fns.size()+1,this);
+			}else{
+				// TODO: make lookup for fn #2
+			}
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
-			ft.remove(ref it);
+			ft.remove(ref it); // TODO: only if last fn
 		}
 		public Gtk.TreeIter get_it(){ return it; }
 		public int64 get_ssi(){ return ssi; }
@@ -272,7 +288,7 @@ namespace Treesize {
 				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE,flags,null);
 				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
 				TimeVal mtime=i.get_modification_time();
-				ft.set(it,
+				if(!dsec) ft.set(it,
 					FileTree.Col.MTIME,rndtime(mtime),
 					FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
 					FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
@@ -285,7 +301,7 @@ namespace Treesize {
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					while((fich=en.next_file())!=null){
 						FileNode? fn=ch.lookup(fich.get_name());
-						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this);
+						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
 						else ch.remove(fich.get_name());
 						ft.updfile.insert(fn);
 						nch.insert(fich.get_name(),fn);
