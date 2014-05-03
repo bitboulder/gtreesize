@@ -116,7 +116,7 @@ namespace Treesize {
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
-		public GLib.HashTable<int,FileNode> fns=new GLib.HashTable<int,FileNode>(null,null);
+		public GLib.HashTable<string,FileNode> fns=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		private bool updateon=false;
 		private time_t lastupd=0;
 		private Gtk.FileChooserDialog fc;
@@ -145,9 +145,9 @@ namespace Treesize {
 			}
 		}
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
-			GLib.Value vid; base.get_value(it,Col.ID,out vid);
-			int id=vid.get_int();
-			return (fn= id==0 ? null : fns.lookup(id))!=null;
+			GLib.Value vfn; base.get_value(it,Col.FN,out vfn);
+			string sfn=vfn.get_string();
+			return (fn= sfn=="" ? null : fns.lookup(sfn))!=null;
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
 			if(column!=Col.RSSI && column!=Col.RSPI && column!=Col.RSSI2 && column!=Col.RSPI2){
@@ -245,7 +245,7 @@ namespace Treesize {
 					FileTree.Col.BN,fi.get_basename());
 			}
 			if(!dsec){
-				ft.fns.set((int)ft.fns.size()+1,this); // TODO: intro primary FN, if exists
+				ft.fns.set(_fn,this); // TODO: intro primary FN, if exists
 			}else{
 				// TODO: link secondary and primary
 			}
