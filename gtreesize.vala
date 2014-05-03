@@ -249,7 +249,7 @@ namespace Treesize {
 			}else{
 				// TODO: link secondary and primary
 			}
-			ch=new GLib.HashTable<string,FileNode>(null,null);
+			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
