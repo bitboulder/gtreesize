@@ -120,6 +120,7 @@ namespace Treesize {
 		private bool updateon=false;
 		private time_t lastupd=0;
 		private Gtk.FileChooserDialog fc;
+		private bool diff=false;
 		public void parser_finished(Gtk.Builder builder){
 			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			upddpl=new Queue(updcheck);
@@ -132,22 +133,29 @@ namespace Treesize {
 			}else for(int i=1;i<args.length;i++) adddir(args[i]);
 		}
 		protected void diffdir(){ seldir(true); }
-		protected void seldir(bool diff=false){
-			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename(),diff);
+		protected void seldir(bool _diff=false){
+			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename(),_diff);
 			fc.hide();
 		}
-		public void adddir(string dirname,bool diff=false){ updfile.insert(new FileNode(dirname,this,null,diff)); }
+		public void adddir(string dirname,bool _diff=false){
+			updfile.insert(new FileNode(dirname,this,null,_diff));
+			if(_diff){
+				diff=true;
+				set_sort_column_id(Col.DSSI,Gtk.SortType.DESCENDING);
+			}
+		}
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vid; base.get_value(it,Col.ID,out vid);
 			int id=vid.get_int();
 			return (fn= id==0 ? null : fns.lookup(id))!=null;
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
-			if(column!=Col.RSSI && column!=Col.RSPI){
+			if(column!=Col.RSSI && column!=Col.RSPI && column!=Col.RSSI2 && column!=Col.RSPI2){
 				base.get_value(iter,column,out val);
 			}else{
 				FileNode fn;
 				if(it2fn(iter,out fn) && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
+				// TODO: select primary or seondary fn
 				switch(column){
 				case Col.RSSI:
 					val=Value(typeof(string));
@@ -173,7 +181,7 @@ namespace Treesize {
 			FileNode fn;
 			if(!upddpl.empty() && (updfile.empty() || tchg))
 				while(upddpl.pop(out fn)){
-					if(!fn.del){
+					if(!fn.del){ // TODO: subtract seconardy if diff
 						if(fn.get_ssichg()) set(fn.get_it(),Col.SSI,fn.get_ssi());
 						else row_changed(get_path(fn.get_it()),fn.get_it());
 					}
@@ -189,11 +197,11 @@ namespace Treesize {
 		public void refresh(Gtk.TreeSelection? s){
 			if(s!=null) s.selected_foreach((tm,tp,it)=>{
 					FileNode fn;
-					if(it2fn(it,out fn)) updfile.insert(fn);
+					if(it2fn(it,out fn)) updfile.insert(fn); //TODO: also insert secondary fn
 					});
 			else base.foreach((tm,tp,it)=>{
 					FileNode fn;
-					if(it2fn(it,out fn)) updfile.insert(fn);
+					if(it2fn(it,out fn)) updfile.insert(fn); //TODO: also insert secondary fn
 					return false;
 					});
 		}
@@ -219,6 +227,7 @@ namespace Treesize {
 		public  bool          vis=false;
 		public  bool          del=false;
 		private bool          dsec=false;
+		//TODO: link secondary FileNode?
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
@@ -236,9 +245,9 @@ namespace Treesize {
 					FileTree.Col.BN,fi.get_basename());
 			}
 			if(!dsec){
-				ft.fns.set((int)ft.fns.size()+1,this);
+				ft.fns.set((int)ft.fns.size()+1,this); // TODO: intro primary FN, if exists
 			}else{
-				// TODO: make lookup for fn #2
+				// TODO: link secondary and primary
 			}
 			ch=new GLib.HashTable<string,FileNode>(null,null);
 		}
@@ -254,7 +263,7 @@ namespace Treesize {
 		private void updssi(int64 chg){
 			ssi+=chg;
 			ssichg=true;
-			if(vis) ch.find((fn,fc)=>{ if(fc.vis) ft.upddpl.insert(fc); return false; });
+			if(vis) ch.find((fn,fc)=>{ if(fc.vis) ft.upddpl.insert(fc); return false; }); // TODO: insert primary fn
 			if(pa!=null) pa.updssi(chg);
 			else if(vis) ft.upddpl.insert(this);
 		}
