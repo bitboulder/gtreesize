@@ -224,7 +224,7 @@ namespace Treesize {
 				FileTree.Col.FN,_fn,
 				FileTree.Col.BN,fi.get_basename());
 			ft.fns.set((int)ft.fns.size()+1,this);
-			ch=new GLib.HashTable<string,FileNode>(null,null);
+			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
