@@ -227,43 +227,46 @@ namespace Treesize {
 		public  bool          vis=false;
 		public  bool          del=false;
 		private bool          dsec=false;
-		//TODO: link secondary FileNode?
+		private FileNode?     doth=null;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
-			string dfn;
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
 			dsec=_dsec;
-			if(dsec){
-				//TODO: find it for fn
+
+			string dfn=fi.get_basename();
+			if(pa!=null){
+				GLib.Value vfn; ft.get_value(pa.it,FileTree.Col.DFN,out vfn);
+				dfn="%s/%s".printf(vfn.get_string(),dfn);
 			}
-			if(it==null){
+			// TODO: find primary fn on top level with different basename
+			doth=ft.fns.lookup(dfn);
+			if(!dsec && doth!=null && !doth.dsec){
+				int i;
+				for(i=0;doth!=null;i++) doth=ft.fns.lookup("%s%i".printf(dfn,i));
+				dfn="%s%i".printf(dfn,i);
+			}
+
+			if(doth!=null) it=doth.it; else{
 				if(pa==null) ft.append(out it,null);
 				else ft.append(out it,pa.it);
-				dfn=fi.get_basename();
+				ft.set(it,FileTree.Col.DFN,dfn);
+			}
+			if(doth==null || !dsec){
 				ft.set(it,
 					FileTree.Col.FN,_fn,
-					FileTree.Col.BN,dfn);
-				if(pa!=null){
-					GLib.Value vfn; ft.get_value(pa.it,FileTree.Col.DFN,out vfn);
-					dfn="%s/%s".printf(vfn.get_string(),dfn);
-				}
-				// TODO: modifiy duplicate dfn without diff
-				ft.set(it,FileTree.Col.DFN,dfn);
-				if(!dsec){
-					ft.fns.set(dfn,this); // TODO: intro primary FN, if exists
-				}else{
-					// TODO: link secondary and primary
-				}
-			}else{
-				// TODO: do something
+					FileTree.Col.BN,fi.get_basename());
+				ft.fns.set(dfn,this);
 			}
+
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
 			ft.remove(ref it); // TODO: only if last fn
 		}
+		public FileNode get_prim(){ return dsec && doth!=null ? doth : this; }
+		public FileNode get_sec(){ return !dsec && doth!=null ? doth : this; }
 		public Gtk.TreeIter get_it(){ return it; }
 		public int64 get_ssi(){ return ssi; }
 		public bool get_ssichg(){ bool ret=ssichg; ssichg=false; return ret; }
