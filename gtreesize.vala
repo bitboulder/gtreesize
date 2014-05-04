@@ -112,7 +112,7 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
-		public enum Col { ID,FN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,DSSI,RSSI2,RSPI2,NUM }
+		public enum Col { FN,DFN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,DSSI,RSSI2,RSPI2,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
@@ -145,7 +145,7 @@ namespace Treesize {
 			}
 		}
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
-			GLib.Value vfn; base.get_value(it,Col.FN,out vfn);
+			GLib.Value vfn; base.get_value(it,Col.DFN,out vfn);
 			string sfn=vfn.get_string();
 			return (fn= sfn=="" ? null : fns.lookup(sfn))!=null;
 		}
@@ -229,6 +229,7 @@ namespace Treesize {
 		private bool          dsec=false;
 		//TODO: link secondary FileNode?
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
+			string dfn;
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
@@ -239,15 +240,23 @@ namespace Treesize {
 			if(it==null){
 				if(pa==null) ft.append(out it,null);
 				else ft.append(out it,pa.it);
+				dfn=fi.get_basename();
 				ft.set(it,
-					FileTree.Col.ID,ft.fns.size()+1,
 					FileTree.Col.FN,_fn,
-					FileTree.Col.BN,fi.get_basename());
-			}
-			if(!dsec){
-				ft.fns.set(_fn,this); // TODO: intro primary FN, if exists
+					FileTree.Col.BN,dfn);
+				if(pa!=null){
+					GLib.Value vfn; ft.get_value(pa.it,FileTree.Col.DFN,out vfn);
+					dfn="%s/%s".printf(vfn.get_string(),dfn);
+				}
+				// TODO: modifiy duplicate dfn without diff
+				ft.set(it,FileTree.Col.DFN,dfn);
+				if(!dsec){
+					ft.fns.set(dfn,this); // TODO: intro primary FN, if exists
+				}else{
+					// TODO: link secondary and primary
+				}
 			}else{
-				// TODO: link secondary and primary
+				// TODO: do something
 			}
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		}

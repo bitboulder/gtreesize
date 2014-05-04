@@ -2,8 +2,8 @@
 <interface>
 	<object class="TreesizeFileTree" id="filetree">
 		<columns>
-			<column type="gint"/>       <!-- id       -->
 			<column type="gchararray"/> <!-- fn       -->
+			<column type="gchararray"/> <!-- dfn (display file name)        -->
 			<column type="gint64"/>     <!-- ssi (total size) for sort      -->
 			<column type="gchararray"/> <!-- virtual: ssi (total size)      -->
 			<column type="gint"/>       <!-- virtual: spi (percentage size) -->
