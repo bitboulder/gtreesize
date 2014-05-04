@@ -180,7 +180,7 @@ namespace Treesize {
 				while(upddpl.pop(out fn)){
 					if(!fn.del){
 						fn=fn.get_prim();
-						FileNode? fn2=fn.get_sec();
+						FileNode? fn2=fn.get_oth();
 						if(fn.get_ssichg() || (fn2!=null && fn2.get_ssichg())){
 							int64 ssi=fn.get_ssi();
 							if(fn2!=null) ssi=(ssi-fn2.get_ssi()).abs();
