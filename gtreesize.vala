@@ -285,7 +285,7 @@ namespace Treesize {
 		public bool get_ssichg(){ bool ret=ssichg; ssichg=false; return ret; }
 		public string rnd_ssi(){
 			if(doth==null) return rndsi(ssi);
-			return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi));
+			return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi,true));
 		}
 		public int rnd_spi(){ return pa!=null?(int)(pa.ssi==0?0:ssi*100/pa.ssi):100; }
 		private void updssi(int64 chg){
@@ -295,15 +295,18 @@ namespace Treesize {
 			if(pa!=null) pa.updssi(chg);
 			else if(vis) ft.upddpl.insert(this);
 		}
-		private string rndsi(int64 _si){
+		private string rndsi(int64 _si,bool av=false){
 			if(_si==0) return "0";
 			string ext[5]={"k","M","G","T"};
 			double si=_si;
 			int ei;
+			string v="";
+			if(si<0){ v="-"; si*=-1; }
+			else if(av) v="+";
 			si/=1024;
 			for(ei=0;si>=1000 && ei<ext.length;ei++) si/=1024;
 			int num=si<10?1:0;
-			return ("%."+num.to_string()+"f"+ext[ei]).printf(si);
+			return ("%s%."+num.to_string()+"f"+ext[ei]).printf(v,si);
 		}
 		private string rndtime(TimeVal time){ return Time.local(time.tv_sec).format("%x %H:%M"); }
 		private string rndmode(uint mode){
