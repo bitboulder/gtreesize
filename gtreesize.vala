@@ -112,7 +112,7 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
-		public enum Col { FN,DFN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,DSSI,RSSI2,RSPI2,NUM }
+		public enum Col { FN,DFN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
@@ -139,10 +139,7 @@ namespace Treesize {
 		}
 		public void adddir(string dirname,bool _diff=false){
 			updfile.insert(new FileNode(dirname,this,null,_diff));
-			if(_diff){
-				diff=true;
-				set_sort_column_id(Col.DSSI,Gtk.SortType.DESCENDING);
-			}
+			if(_diff) diff=true;
 		}
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
 			GLib.Value vfn; base.get_value(it,Col.DFN,out vfn);
@@ -150,12 +147,12 @@ namespace Treesize {
 			return (fn= sfn=="" ? null : fns.lookup(sfn))!=null;
 		}
 		public void get_value(Gtk.TreeIter iter,int column,out GLib.Value val){
-			if(column!=Col.RSSI && column!=Col.RSPI && column!=Col.RSSI2 && column!=Col.RSPI2){
+			if(column!=Col.RSSI && column!=Col.RSPI){
 				base.get_value(iter,column,out val);
 			}else{
 				FileNode fn;
 				if(it2fn(iter,out fn) && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
-				// TODO: select primary or seondary fn
+				fn=fn.get_prim();
 				switch(column){
 				case Col.RSSI:
 					val=Value(typeof(string));
@@ -181,9 +178,14 @@ namespace Treesize {
 			FileNode fn;
 			if(!upddpl.empty() && (updfile.empty() || tchg))
 				while(upddpl.pop(out fn)){
-					if(!fn.del){ // TODO: subtract seconardy if diff
-						if(fn.get_ssichg()) set(fn.get_it(),Col.SSI,fn.get_ssi());
-						else row_changed(get_path(fn.get_it()),fn.get_it());
+					if(!fn.del){
+						fn=fn.get_prim();
+						FileNode? fn2=fn.get_sec();
+						if(fn.get_ssichg() || (fn2!=null && fn2.get_ssichg())){
+							int64 ssi=fn.get_ssi();
+							if(fn2!=null) ssi=(ssi-fn2.get_ssi()).abs();
+							set(fn.get_it(),Col.SSI,ssi);
+						}else row_changed(get_path(fn.get_it()),fn.get_it());
 					}
 				}
 			else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
@@ -197,11 +199,17 @@ namespace Treesize {
 		public void refresh(Gtk.TreeSelection? s){
 			if(s!=null) s.selected_foreach((tm,tp,it)=>{
 					FileNode fn;
-					if(it2fn(it,out fn)) updfile.insert(fn); //TODO: also insert secondary fn
+					if(it2fn(it,out fn)){
+						updfile.insert(fn);
+						if((fn=fn.get_oth())!=null) updfile.insert(fn);
+					}
 					});
 			else base.foreach((tm,tp,it)=>{
 					FileNode fn;
-					if(it2fn(it,out fn)) updfile.insert(fn); //TODO: also insert secondary fn
+					if(it2fn(it,out fn)){
+						updfile.insert(fn);
+						if((fn=fn.get_oth())!=null) updfile.insert(fn);
+					}
 					return false;
 					});
 		}
@@ -247,7 +255,10 @@ namespace Treesize {
 				dfn="%s%i".printf(dfn,i);
 			}
 
-			if(doth!=null) it=doth.it; else{
+			if(doth!=null){
+				it=doth.it;
+				doth.doth=this;
+			}else{
 				if(pa==null) ft.append(out it,null);
 				else ft.append(out it,pa.it);
 				ft.set(it,FileTree.Col.DFN,dfn);
@@ -263,14 +274,19 @@ namespace Treesize {
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
-			ft.remove(ref it); // TODO: only if last fn
+			if(doth!=null) doth.doth=null;
+			else ft.remove(ref it);
 		}
-		public FileNode get_prim(){ return dsec && doth!=null ? doth : this; }
-		public FileNode get_sec(){ return !dsec && doth!=null ? doth : this; }
+		public FileNode  get_prim(){ return  dsec && doth!=null ? doth : this; }
+		public FileNode  get_sec (){ return !dsec && doth!=null ? doth : this; }
+		public FileNode? get_oth (){ return  doth; }
 		public Gtk.TreeIter get_it(){ return it; }
 		public int64 get_ssi(){ return ssi; }
 		public bool get_ssichg(){ bool ret=ssichg; ssichg=false; return ret; }
-		public string rnd_ssi(){ return rndsi(ssi); }
+		public string rnd_ssi(){
+			if(doth==null) return rndsi(ssi);
+			return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi));
+		}
 		public int rnd_spi(){ return pa!=null?(int)(pa.ssi==0?0:ssi*100/pa.ssi):100; }
 		private void updssi(int64 chg){
 			ssi+=chg;

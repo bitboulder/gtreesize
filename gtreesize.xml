@@ -2,20 +2,17 @@
 <interface>
 	<object class="TreesizeFileTree" id="filetree">
 		<columns>
-			<column type="gchararray"/> <!-- fn       -->
-			<column type="gchararray"/> <!-- dfn (display file name)        -->
-			<column type="gint64"/>     <!-- ssi (total size) for sort      -->
-			<column type="gchararray"/> <!-- virtual: ssi (total size)      -->
-			<column type="gint"/>       <!-- virtual: spi (percentage size) -->
-			<column type="gchararray"/> <!-- basename -->
-			<column type="gchararray"/> <!-- mtime    -->
-			<column type="gchararray"/> <!-- mode     -->
-			<column type="gchararray"/> <!-- user     -->
-			<column type="gchararray"/> <!-- group    -->
-			<column type="gchararray"/> <!-- size     -->
-			<column type="gint64"/>     <!-- dssi: abs(ssi#1-ssi#2) for sort  -->
-			<column type="gchararray"/> <!-- virtual: ssi#2 (total size)      -->
-			<column type="gint"/>       <!-- virtual: spi#2 (percentage size) -->
+			<column type="gchararray"/> <!--  0: fn       -->
+			<column type="gchararray"/> <!--  1: dfn (display file name)        -->
+			<column type="gint64"/>     <!--  2: ssi (total size) for sort      -->
+			<column type="gchararray"/> <!--  3: virtual: ssi (total size)      -->
+			<column type="gint"/>       <!--  4: virtual: spi (percentage size) -->
+			<column type="gchararray"/> <!--  5: basename -->
+			<column type="gchararray"/> <!--  6: mtime    -->
+			<column type="gchararray"/> <!--  7: mode     -->
+			<column type="gchararray"/> <!--  8: user     -->
+			<column type="gchararray"/> <!--  9: group    -->
+			<column type="gchararray"/> <!-- 10: size     -->
 		</columns>
 		<signal name="setcur" handler="treesize_treesize_on_setcur" swapped="yes"/>
 	</object>
