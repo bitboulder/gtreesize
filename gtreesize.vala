@@ -292,8 +292,19 @@ namespace Treesize {
 			return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi,true));
 		}
 		public int rnd_spi(){
-			// TODO: something usefull for diff
-			return pa!=null?(int)(pa.ssi==0?0:ssi*100/pa.ssi):100;
+			int64 ps=ssi,s=ssi;
+			if(pa!=null){
+				ps=pa.ssi;
+				if(doth!=null && pa.doth!=null){
+					s=(s-doth.ssi).abs();
+					ps=(ps-pa.doth.ssi).abs();
+				}
+			}
+			int v=0;
+			if(ps!=0) v=(int)(s*100/ps);
+			if(v>100) v=100;
+			if(v<0) v=0;
+			return v;
 		}
 		private void updssi(int64 chg){
 			ssi+=chg;
