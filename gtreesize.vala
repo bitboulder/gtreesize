@@ -112,7 +112,7 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
-		public enum Col { FN,DFN,SSI,RSSI,RSPI,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
+		public enum Col { FN,DFN,SSI,RSSI,RSPI,ACT,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		public Queue updfile;
@@ -233,6 +233,8 @@ namespace Treesize {
 		public  bool          del=false;
 		private bool          dsec=false;
 		private FileNode?     doth=null;
+		private int           act=0;
+		private uint          ch_act=1;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
@@ -275,6 +277,8 @@ namespace Treesize {
 			}
 
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
+
+			GLib.Timeout.add(500,on_act);
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
@@ -380,11 +384,21 @@ namespace Treesize {
 			}
 			updssi(nsi-si);
 			si=nsi;
+			ch_act=ch.size();
 			Timer.timer(1,3);
 		}
 		private void kill(){
 			del=true;
 			ch.find((fn,fc)=>{ fc.kill(); return false; });
+		}
+		private bool on_act(){
+			if(ch_act==0){
+				if(pa!=null && pa.ch_act!=0) pa.ch_act--;
+				ft.set(it,FileTree.Col.ACT,-1);
+				return false;
+			}
+			ft.set(it,FileTree.Col.ACT,act++);
+			return true;
 		}
 	}
 	public class Timer {

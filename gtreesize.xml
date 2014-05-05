@@ -7,12 +7,13 @@
 			<column type="gint64"/>     <!--  2: ssi (total size) for sort      -->
 			<column type="gchararray"/> <!--  3: virtual: ssi (total size)      -->
 			<column type="gint"/>       <!--  4: virtual: spi (percentage size) -->
-			<column type="gchararray"/> <!--  5: basename -->
-			<column type="gchararray"/> <!--  6: mtime    -->
-			<column type="gchararray"/> <!--  7: mode     -->
-			<column type="gchararray"/> <!--  8: user     -->
-			<column type="gchararray"/> <!--  9: group    -->
-			<column type="gchararray"/> <!-- 10: size     -->
+			<column type="gint"/>       <!--  5: virtual: act (active)          -->
+			<column type="gchararray"/> <!--  6: basename -->
+			<column type="gchararray"/> <!--  7: mtime    -->
+			<column type="gchararray"/> <!--  8: mode     -->
+			<column type="gchararray"/> <!--  9: user     -->
+			<column type="gchararray"/> <!-- 10: group    -->
+			<column type="gchararray"/> <!-- 11: size     -->
 		</columns>
 		<signal name="setcur" handler="treesize_treesize_on_setcur" swapped="yes"/>
 	</object>
@@ -174,12 +175,13 @@
 									<object class="GtkCellRendererProgress" id="treesize-tv-cr-file-prg"/>
 									<attributes>
 										<attribute name="value">4</attribute>
+										<attribute name="pulse">5</attribute>
 									</attributes>
 								</child>
 								<child>
 									<object class="GtkCellRendererText" id="treesize-tv-cr-file-name"/>
 									<attributes>
-										<attribute name="text">5</attribute>
+										<attribute name="text">6</attribute>
 									</attributes>
 								</child>
 							</object>
@@ -190,7 +192,7 @@
 								<child>
 									<object class="GtkCellRendererText" id="treesize-tv-cr-mtime"/>
 									<attributes>
-										<attribute name="text">6</attribute>
+										<attribute name="text">7</attribute>
 									</attributes>
 								</child>
 							</object>
@@ -201,7 +203,7 @@
 								<child>
 									<object class="GtkCellRendererText" id="treesize-tv-cr-mode"/>
 									<attributes>
-										<attribute name="text">7</attribute>
+										<attribute name="text">8</attribute>
 									</attributes>
 								</child>
 							</object>
@@ -212,7 +214,7 @@
 								<child>
 									<object class="GtkCellRendererText" id="treesize-tv-cr-owner"/>
 									<attributes>
-										<attribute name="text">8</attribute>
+										<attribute name="text">9</attribute>
 									</attributes>
 								</child>
 							</object>
@@ -223,7 +225,7 @@
 								<child>
 									<object class="GtkCellRendererText" id="treesize-tv-cr-group"/>
 									<attributes>
-										<attribute name="text">9</attribute>
+										<attribute name="text">10</attribute>
 									</attributes>
 								</child>
 							</object>
@@ -234,7 +236,7 @@
 								<child>
 									<object class="GtkCellRendererText" id="treesize-tv-cr-size"/>
 									<attributes>
-										<attribute name="text">10</attribute>
+										<attribute name="text">11</attribute>
 									</attributes>
 								</child>
 							</object>
