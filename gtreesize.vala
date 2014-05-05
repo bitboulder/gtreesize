@@ -298,7 +298,7 @@ namespace Treesize {
 		private void updssi(int64 chg){
 			ssi+=chg;
 			ssichg=true;
-			if(vis) ch.find((fn,fc)=>{ if(fc.vis) ft.upddpl.insert(fc); return false; }); // TODO: insert primary fn
+			if(vis) ch.find((fn,fc)=>{ if(fc.vis) ft.upddpl.insert(fc.get_prim()); return false; });
 			if(pa!=null) pa.updssi(chg);
 			else if(vis) ft.upddpl.insert(this);
 		}
