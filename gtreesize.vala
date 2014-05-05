@@ -165,11 +165,8 @@ namespace Treesize {
 				}
 			}
 		}
-		public string get_fn(Gtk.TreeIter iter){
-			string fn;
-			get(iter,Col.FN,out fn);
-			return fn;
-		}
+		public string get_str(Gtk.TreeIter iter,Col col){ string s; get(iter,col,out s); return s; }
+		public string get_fn(Gtk.TreeIter iter){ return get_str(iter,Col.FN); }
 		public bool update(){
 			Timer.timer(0,-1);
 			time_t t=time_t();
@@ -243,16 +240,23 @@ namespace Treesize {
 			dsec=_dsec;
 
 			string dfn=fi.get_basename();
-			if(pa!=null){
-				GLib.Value vfn; ft.get_value(pa.it,FileTree.Col.DFN,out vfn);
-				dfn="%s/%s".printf(vfn.get_string(),dfn);
-			}
-			// TODO: find primary fn on top level with different basename
+			if(pa!=null) dfn="%s/%s".printf(ft.get_str(pa.it,FileTree.Col.DFN),dfn);
 			doth=ft.fns.lookup(dfn);
 			if(!dsec && doth!=null && !doth.dsec){
 				int i;
 				for(i=0;doth!=null;i++) doth=ft.fns.lookup("%s%i".printf(dfn,i));
 				dfn="%s%i".printf(dfn,i);
+			}
+			if(doth==null && dsec && pa==null && ft.iter_n_children(null)==1){
+				Gtk.TreeIter dit;
+				if(ft.get_iter_first(out dit)){
+					string dfn2=ft.get_str(dit,FileTree.Col.DFN);
+					doth=ft.fns.lookup(dfn2);
+					if(doth!=null){
+						ft.set(doth.it,FileTree.Col.BN,"%s (%s)".printf(dfn,dfn2));
+						dfn=dfn2;
+					}
+				}
 			}
 
 			if(doth!=null){
