@@ -268,7 +268,7 @@ namespace Treesize {
 		private uint          ch_act=0;
 		public static uint    nfn=0;
 		private string        fsys;
-		private bool          informed=false;
+		private GLib.FileType ftype=FileType.UNKNOWN;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
 			nfn++;
 			fi=File.new_for_path(_fn);
@@ -378,6 +378,7 @@ namespace Treesize {
 		}
 		static const string file_attr=
 			FileAttribute.STANDARD_NAME+","+
+			FileAttribute.STANDARD_TYPE+","+
 			FileAttribute.STANDARD_ALLOCATED_SIZE+","+
 			FileAttribute.OWNER_USER+","+
 			FileAttribute.OWNER_GROUP+","+
@@ -386,65 +387,65 @@ namespace Treesize {
 			FileAttribute.STANDARD_SIZE+","+
 			FileAttribute.ID_FILESYSTEM;
 		private void updinfo(FileInfo? i){
-			int64 nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
-			TimeVal mtime=i.get_modification_time();
-			if(!dsec) ft.set(it,
-				FileTree.Col.MTIME,rndtime(mtime),
-				FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
-				FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
-				FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
-				FileTree.Col.SIZE, rndsi(i.get_size()));
-			if(ft.fsys_only) fsys=i.get_attribute_string(FileAttribute.ID_FILESYSTEM);
+			int64 nsi=0;
+			if(i!=null){
+				ftype=i.get_file_type();
+				TimeVal mtime=i.get_modification_time();
+				if(!dsec) ft.set(it,
+					FileTree.Col.MTIME,rndtime(mtime),
+					FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
+					FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
+					FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
+					FileTree.Col.SIZE, rndsi(i.get_size()));
+				if(ft.fsys_only) fsys=i.get_attribute_string(FileAttribute.ID_FILESYSTEM);
+				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
+			}
 			updssi(nsi-si);
 			si=nsi;
-			informed=true;
 		}
 		public void updfile(int depth){
 			if(del) return;
 			Timer.timer(1,-1);
-			try{
-				GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
-				if(!informed){
-					FileInfo i=fi.query_info(file_attr,flags,null);
-					updinfo(i);
+			GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
+			if(ftype==FileType.UNKNOWN){
+				try{ updinfo(fi.query_info(file_attr,flags,null)); }
+				catch(GLib.Error e){
+					stdout.printf("Error query file %s: %s",fi.get_path(),e.message);
+					updinfo(null);
 				}
-				Timer.timer(1,0);
-				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
-					fi.enumerate_children_async.begin(file_attr,flags,Priority.DEFAULT,null,(obj,res)=>{
-						try{
-							var en=fi.enumerate_children_async.end(res);
-					FileInfo fich;
+			}
+			Timer.timer(1,0);
+			if(ftype==GLib.FileType.DIRECTORY){
+				fi.enumerate_children_async.begin(file_attr,flags,Priority.DEFAULT,null,(obj,res)=>{
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
-					while((fich=en.next_file())!=null){
-						FileNode? fn=ch.lookup(fich.get_name());
-						if(ft.fsys_only){
-							string _fsys=fich.get_attribute_string(FileAttribute.ID_FILESYSTEM);
-							if(_fsys!=fsys) continue;
+					try{
+						var en=fi.enumerate_children_async.end(res);
+						FileInfo fich;
+						while((fich=en.next_file())!=null){
+							FileNode? fn=ch.lookup(fich.get_name());
+							if(ft.fsys_only){
+								string _fsys=fich.get_attribute_string(FileAttribute.ID_FILESYSTEM);
+								if(_fsys!=fsys) continue;
+							}
+							if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
+							else ch.remove(fich.get_name());
+							fn.updinfo(fich);
+							if(depth!=0) ft.updfile_insert(fn,depth<0?-1:depth-1);
+							nch.insert(fich.get_name(),fn);
 						}
-						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
-						else ch.remove(fich.get_name());
-						fn.updinfo(fich);
-						if(depth!=0) ft.updfile_insert(fn,depth<0?-1:depth-1);
-						nch.insert(fich.get_name(),fn);
-					}
+					}catch(GLib.Error e){ stdout.printf("Error in reading dir %s: %s\n",fi.get_path(),e.message); }
 					ch.find((fn,fc)=>{ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); return false; });
 					ch=nch;
-					}catch(Error e){ stdout.printf("Error: %s\n",e.message); }
-					});
-				}
+				});
 				Timer.timer(1,1);
-				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
+				try{
 					fm=fi.monitor_directory(FileMonitorFlags.NONE,null);
 					fm.changed.connect((file,otherfile,evtype)=>{
 						ft.updfile_insert(this,1);
 					});
-				}
-				Timer.timer(1,2);
-			}catch(Error e){
-				stdout.printf("Error: %s\n",e.message);
-				updssi(-si);
-				si=0;
+				}catch(GLib.IOError e){ stdout.printf("Error monitor dir %s: %s",fi.get_path(),e.message); }
 			}
+			Timer.timer(1,2);
 			set_chact(-1);
 			Timer.timer(1,3);
 		}
