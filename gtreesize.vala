@@ -268,13 +268,13 @@ namespace Treesize {
 		private uint          ch_act=0;
 		public static uint    nfn=0;
 		private string        fsys;
-		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false,string _fsys=""){
+		private bool          informed=false;
+		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
 			nfn++;
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
 			dsec=_dsec;
-			fsys=_fsys;
 
 			string dfn=fi.get_basename();
 			if(pa!=null) dfn="%s/%s".printf(ft.get_str(pa.it,FileTree.Col.DFN),dfn);
@@ -376,25 +376,43 @@ namespace Treesize {
 				(mode>>2)%2==1?'r':'-',(mode>>1)%2==1?'w':'-',(mode>>0)%2==1?(ot?'t':'x'):(ot?'T':'-')
 			);
 		}
+		static const string file_attr=
+			FileAttribute.STANDARD_NAME+","+
+			FileAttribute.STANDARD_ALLOCATED_SIZE+","+
+			FileAttribute.OWNER_USER+","+
+			FileAttribute.OWNER_GROUP+","+
+			FileAttribute.TIME_MODIFIED+","+
+			FileAttribute.UNIX_MODE+","+
+			FileAttribute.STANDARD_SIZE+","+
+			FileAttribute.ID_FILESYSTEM;
+		private void updinfo(FileInfo? i){
+			int64 nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
+			TimeVal mtime=i.get_modification_time();
+			if(!dsec) ft.set(it,
+				FileTree.Col.MTIME,rndtime(mtime),
+				FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
+				FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
+				FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
+				FileTree.Col.SIZE, rndsi(i.get_size()));
+			if(ft.fsys_only) fsys=i.get_attribute_string(FileAttribute.ID_FILESYSTEM);
+			updssi(nsi-si);
+			si=nsi;
+			informed=true;
+		}
 		public void updfile(int depth){
 			if(del) return;
-			int64 nsi=0;
 			Timer.timer(1,-1);
 			try{
 				GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
-				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE+","+FileAttribute.ID_FILESYSTEM,flags,null);
-				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
-				TimeVal mtime=i.get_modification_time();
-				if(!dsec) ft.set(it,
-					FileTree.Col.MTIME,rndtime(mtime),
-					FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
-					FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
-					FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
-					FileTree.Col.SIZE, rndsi(i.get_size()));
-				if(ft.fsys_only) fsys=i.get_attribute_string(FileAttribute.ID_FILESYSTEM);
+				if(!informed){
+					FileInfo i=fi.query_info(file_attr,flags,null);
+					updinfo(i);
+				}
 				Timer.timer(1,0);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
-					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME+","+FileAttribute.ID_FILESYSTEM,flags);
+					fi.enumerate_children_async.begin(file_attr,flags,Priority.DEFAULT,null,(obj,res)=>{
+						try{
+							var en=fi.enumerate_children_async.end(res);
 					FileInfo fich;
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					while((fich=en.next_file())!=null){
@@ -403,13 +421,16 @@ namespace Treesize {
 							string _fsys=fich.get_attribute_string(FileAttribute.ID_FILESYSTEM);
 							if(_fsys!=fsys) continue;
 						}
-						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec,fsys);
+						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
 						else ch.remove(fich.get_name());
+						fn.updinfo(fich);
 						if(depth!=0) ft.updfile_insert(fn,depth<0?-1:depth-1);
 						nch.insert(fich.get_name(),fn);
 					}
 					ch.find((fn,fc)=>{ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); return false; });
 					ch=nch;
+					}catch(Error e){ stdout.printf("Error: %s\n",e.message); }
+					});
 				}
 				Timer.timer(1,1);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
@@ -420,10 +441,10 @@ namespace Treesize {
 				}
 				Timer.timer(1,2);
 			}catch(Error e){
-				nsi=0;
+				stdout.printf("Error: %s\n",e.message);
+				updssi(-si);
+				si=0;
 			}
-			updssi(nsi-si);
-			si=nsi;
 			set_chact(-1);
 			Timer.timer(1,3);
 		}
