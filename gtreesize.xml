@@ -153,100 +153,120 @@
 		<signal name="acc_diff" handler="treesize_file_tree_diffdir" swapped="yes" object="filetree"/>
 		<signal name="acc_quit" handler="gtk_main_quit"              swapped="yes"/>
 		<child>
-			<object class="GtkScrolledWindow" id="treesize-sc">
+			<object class="GtkBox" id="treesize-box">
 				<property name="visible">True</property>
+				<property name="orientation">GTK_ORIENTATION_VERTICAL</property>
 				<child>
-					<object class="GtkTreeView" id="treesize-tv">
-						<property name="model">filetree</property>
+					<object class="GtkScrolledWindow" id="treesize-sc">
 						<property name="visible">True</property>
-						<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
-						<signal name="drag_data_get" handler="treesize_treesize_on_drag_get" swapped="yes"/>
-						<signal name="drag_data_received" handler="treesize_treesize_on_drag_rec" swapped="yes"/>
 						<child>
-							<object class="GtkTreeViewColumn" id="treesize-tv-c-file">
-								<property name="title">File</property>
+							<object class="GtkTreeView" id="treesize-tv">
+								<property name="model">filetree</property>
+								<property name="visible">True</property>
+								<signal name="button_press_event" handler="treesize_treesize_on_menu" swapped="yes"/>
+								<signal name="drag_data_get" handler="treesize_treesize_on_drag_get" swapped="yes"/>
+								<signal name="drag_data_received" handler="treesize_treesize_on_drag_rec" swapped="yes"/>
 								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-file-size"/>
-									<attributes>
-										<attribute name="text">3</attribute>
-									</attributes>
+									<object class="GtkTreeViewColumn" id="treesize-tv-c-file">
+										<property name="title">File</property>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-file-size"/>
+											<attributes>
+												<attribute name="text">3</attribute>
+											</attributes>
+										</child>
+										<child>
+											<object class="GtkCellRendererProgress" id="treesize-tv-cr-file-prg"/>
+											<attributes>
+												<attribute name="value">4</attribute>
+												<attribute name="pulse">5</attribute>
+											</attributes>
+										</child>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-file-name"/>
+											<attributes>
+												<attribute name="text">6</attribute>
+											</attributes>
+										</child>
+									</object>
 								</child>
 								<child>
-									<object class="GtkCellRendererProgress" id="treesize-tv-cr-file-prg"/>
-									<attributes>
-										<attribute name="value">4</attribute>
-										<attribute name="pulse">5</attribute>
-									</attributes>
+									<object class="GtkTreeViewColumn" id="treesize-tv-c-mtime">
+										<property name="title">MTime</property>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-mtime"/>
+											<attributes>
+												<attribute name="text">7</attribute>
+											</attributes>
+										</child>
+									</object>
 								</child>
 								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-file-name"/>
-									<attributes>
-										<attribute name="text">6</attribute>
-									</attributes>
+									<object class="GtkTreeViewColumn" id="treesize-tv-c-mode">
+										<property name="title">Mode</property>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-mode"/>
+											<attributes>
+												<attribute name="text">8</attribute>
+											</attributes>
+										</child>
+									</object>
 								</child>
-							</object>
-						</child>
-						<child>
-							<object class="GtkTreeViewColumn" id="treesize-tv-c-mtime">
-								<property name="title">MTime</property>
 								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-mtime"/>
-									<attributes>
-										<attribute name="text">7</attribute>
-									</attributes>
+									<object class="GtkTreeViewColumn" id="treesize-tv-c-owner">
+										<property name="title">Owner</property>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-owner"/>
+											<attributes>
+												<attribute name="text">9</attribute>
+											</attributes>
+										</child>
+									</object>
 								</child>
-							</object>
-						</child>
-						<child>
-							<object class="GtkTreeViewColumn" id="treesize-tv-c-mode">
-								<property name="title">Mode</property>
 								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-mode"/>
-									<attributes>
-										<attribute name="text">8</attribute>
-									</attributes>
+									<object class="GtkTreeViewColumn" id="treesize-tv-c-group">
+										<property name="title">Group</property>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-group"/>
+											<attributes>
+												<attribute name="text">10</attribute>
+											</attributes>
+										</child>
+									</object>
 								</child>
-							</object>
-						</child>
-						<child>
-							<object class="GtkTreeViewColumn" id="treesize-tv-c-owner">
-								<property name="title">Owner</property>
 								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-owner"/>
-									<attributes>
-										<attribute name="text">9</attribute>
-									</attributes>
+									<object class="GtkTreeViewColumn" id="treesize-tv-c-size">
+										<property name="title">Size</property>
+										<child>
+											<object class="GtkCellRendererText" id="treesize-tv-cr-size"/>
+											<attributes>
+												<attribute name="text">11</attribute>
+											</attributes>
+										</child>
+									</object>
 								</child>
-							</object>
-						</child>
-						<child>
-							<object class="GtkTreeViewColumn" id="treesize-tv-c-group">
-								<property name="title">Group</property>
-								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-group"/>
-									<attributes>
-										<attribute name="text">10</attribute>
-									</attributes>
+								<child internal-child="selection">
+									<object class="GtkTreeSelection" id="treesize-tv-sel">
+										<signal name="changed" handler="treesize_treesize_on_sel_chg" swapped="yes"/>
+									</object>
 								</child>
-							</object>
-						</child>
-						<child>
-							<object class="GtkTreeViewColumn" id="treesize-tv-c-size">
-								<property name="title">Size</property>
-								<child>
-									<object class="GtkCellRendererText" id="treesize-tv-cr-size"/>
-									<attributes>
-										<attribute name="text">11</attribute>
-									</attributes>
-								</child>
-							</object>
-						</child>
-						<child internal-child="selection">
-							<object class="GtkTreeSelection" id="treesize-tv-sel">
-								<signal name="changed" handler="treesize_treesize_on_sel_chg" swapped="yes"/>
 							</object>
 						</child>
 					</object>
+					<packing>
+						<property name="expand">True</property>
+						<property name="fill">True</property>
+					</packing>
+				</child>
+				<child>
+					<object class="TreesizeProgressBar" id="treesize-prg">
+						<property name="visible">True</property>
+						<property name="show_text">True</property>
+					</object>
+					<packing>
+						<property name="expand">False</property>
+						<property name="fill">True</property>
+					</packing>
 				</child>
 			</object>
 		</child>

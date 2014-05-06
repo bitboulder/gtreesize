@@ -107,6 +107,7 @@ namespace Treesize {
 			return true;
 		}
 		public bool empty(){ return hst.size()==0; }
+		public uint size(){ return hst.size(); }
 		public bool pop(out FileNode fn){
 			fn=null;
 			if(empty()) return false;
@@ -225,6 +226,7 @@ namespace Treesize {
 			get(iter,Col.FN,out fn);
 			Posix.system(_cmd+" \""+fn+"\""+"\n");
 		}
+		public uint get_nupdfile(){ return updfile.size(); }
 	}
 
 	public class FileNode {
@@ -243,7 +245,9 @@ namespace Treesize {
 		private FileNode?     doth=null;
 		private int           act=0;
 		private uint          ch_act=0;
+		public static uint    nfn=0;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
+			nfn++;
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
@@ -288,6 +292,7 @@ namespace Treesize {
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		}
 		~FileNode(){
+			nfn--;
 			if(pa!=null) pa.updssi(-si);
 			if(doth!=null) doth.doth=null;
 			else ft.remove(ref it);
@@ -424,6 +429,24 @@ namespace Treesize {
 			return true;
 		}
 		public void on_upd(){ set_chact(1); }
+	}
+	public class ProgressBar : Gtk.ProgressBar, Gtk.Buildable {
+		private FileTree ft;
+		public void parser_finished(Gtk.Builder builder){
+			ft=builder.get_object("filetree") as FileTree;
+			GLib.Timeout.add(500,on_upd);
+		}
+		private bool on_upd(){
+			uint nu=ft.get_nupdfile();
+			visible=nu!=0;
+			if(nu!=0){
+				uint nf=FileNode.nfn;
+				nu=nf-nu;
+				fraction=(double)nu/(double)nf;
+				text="%u/%u".printf(nu,nf);
+			}
+			return true;
+		}
 	}
 	public class Timer {
 		private static Posix.timespec tsl[5];
