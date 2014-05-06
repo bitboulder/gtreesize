@@ -100,7 +100,12 @@ namespace Treesize {
 		private GLib.HashTable<FileNode,FileNode> hst=new GLib.HashTable<FileNode,FileNode>(null,null);
 		private CheckFunc check;
 		public Queue(CheckFunc _check){ check=_check; }
-		public void insert(FileNode fn){ if(!hst.contains(fn)){ hst.insert(fn,fn); check(); } }
+		public bool insert(FileNode fn){
+			if(hst.contains(fn)) return false;
+			hst.insert(fn,fn);
+			check();
+			return true;
+		}
 		public bool empty(){ return hst.size()==0; }
 		public bool pop(out FileNode fn){
 			fn=null;
@@ -115,7 +120,7 @@ namespace Treesize {
 		public enum Col { FN,DFN,SSI,RSSI,RSPI,ACT,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
-		public Queue updfile;
+		private Queue updfile;
 		public GLib.HashTable<string,FileNode> fns=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		private bool updateon=false;
 		private time_t lastupd=0;
@@ -138,7 +143,7 @@ namespace Treesize {
 			fc.hide();
 		}
 		public void adddir(string dirname,bool _diff=false){
-			updfile.insert(new FileNode(dirname,this,null,_diff));
+			updfile_insert(new FileNode(dirname,this,null,_diff));
 			if(_diff) diff=true;
 		}
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
@@ -151,7 +156,7 @@ namespace Treesize {
 				base.get_value(iter,column,out val);
 			}else{
 				FileNode fn;
-				if(it2fn(iter,out fn) && !fn.vis){ upddpl.insert(fn); fn.vis=true; }
+				if(it2fn(iter,out fn) && !fn.get_vis()){ upddpl.insert(fn); fn.set_vis(); }
 				fn=fn.get_prim();
 				switch(column){
 				case Col.RSSI:
@@ -193,19 +198,22 @@ namespace Treesize {
 			return updateon=nupdateon;
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
+		public void updfile_insert(FileNode fn){
+			if(updfile.insert(fn)) fn.on_upd();
+		}
 		public void refresh(Gtk.TreeSelection? s){
 			if(s!=null) s.selected_foreach((tm,tp,it)=>{
 					FileNode fn;
 					if(it2fn(it,out fn)){
-						updfile.insert(fn);
-						if((fn=fn.get_oth())!=null) updfile.insert(fn);
+						updfile_insert(fn);
+						if((fn=fn.get_oth())!=null) updfile_insert(fn);
 					}
 					});
 			else base.foreach((tm,tp,it)=>{
 					FileNode fn;
 					if(it2fn(it,out fn)){
-						updfile.insert(fn);
-						if((fn=fn.get_oth())!=null) updfile.insert(fn);
+						updfile_insert(fn);
+						if((fn=fn.get_oth())!=null) updfile_insert(fn);
 					}
 					return false;
 					});
@@ -229,12 +237,12 @@ namespace Treesize {
 		private int64         si=0;
 		private int64         ssi=0;
 		private bool          ssichg=false;
-		public  bool          vis=false;
+		private bool          vis=false;
 		public  bool          del=false;
 		private bool          dsec=false;
 		private FileNode?     doth=null;
 		private int           act=0;
-		private uint          ch_act=1;
+		private uint          ch_act=0;
 		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
 			fi=File.new_for_path(_fn);
 			ft=_ft;
@@ -277,8 +285,6 @@ namespace Treesize {
 			}
 
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
-
-			GLib.Timeout.add(500,on_act);
 		}
 		~FileNode(){
 			if(pa!=null) pa.updssi(-si);
@@ -365,7 +371,7 @@ namespace Treesize {
 						FileNode? fn=ch.lookup(fich.get_name());
 						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
 						else ch.remove(fich.get_name());
-						ft.updfile.insert(fn);
+						ft.updfile_insert(fn);
 						nch.insert(fich.get_name(),fn);
 					}
 					ch.find((fn,fc)=>{ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); return false; });
@@ -375,7 +381,7 @@ namespace Treesize {
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					fm=fi.monitor_directory(FileMonitorFlags.NONE,null);
 					fm.changed.connect((file,otherfile,evtype)=>{
-						ft.updfile.insert(this);
+						ft.updfile_insert(this);
 					});
 				}
 				Timer.timer(1,2);
@@ -384,22 +390,40 @@ namespace Treesize {
 			}
 			updssi(nsi-si);
 			si=nsi;
-			ch_act=ch.size();
+			set_chact(-1);
 			Timer.timer(1,3);
 		}
 		private void kill(){
 			del=true;
 			ch.find((fn,fc)=>{ fc.kill(); return false; });
 		}
+		public bool get_vis(){ return vis; }
+		public void set_vis(){ vis=true; set_chact(); }
+		private void set_chact(int ch=0){
+			uint o=ch_act;
+			bool init=false;
+			if(ch<0){
+				if(ch_act>-ch) ch_act+=ch;
+				else{
+					ch_act=0;
+					if(vis) ft.set(it,FileTree.Col.ACT,-1);
+					if(pa!=null) pa.set_chact(-1);
+				}
+			}else if(ch>0){
+				if(ch_act==0){
+					if(vis) init=true;
+					if(pa!=null) pa.set_chact(1);
+				}
+				ch_act+=ch;
+			}else /*ch==0*/ if(vis && ch_act!=0) init=true;
+			if(init){ on_act(); GLib.Timeout.add(500,on_act); }
+		}
 		private bool on_act(){
-			if(ch_act==0){
-				if(pa!=null && pa.ch_act!=0) pa.ch_act--;
-				ft.set(it,FileTree.Col.ACT,-1);
-				return false;
-			}
+			if(ch_act==0) return false;
 			ft.set(it,FileTree.Col.ACT,act++);
 			return true;
 		}
+		public void on_upd(){ set_chact(1); }
 	}
 	public class Timer {
 		private static Posix.timespec tsl[5];
