@@ -280,7 +280,8 @@ namespace Treesize {
 			if(doth==null || !dsec){
 				ft.set(it,
 					FileTree.Col.FN,_fn,
-					FileTree.Col.BN,fi.get_basename());
+					FileTree.Col.BN,fi.get_basename(),
+					FileTree.Col.ACT,-1);
 				ft.fns.set(dfn,this);
 			}
 
@@ -400,7 +401,6 @@ namespace Treesize {
 		public bool get_vis(){ return vis; }
 		public void set_vis(){ vis=true; set_chact(); }
 		private void set_chact(int ch=0){
-			uint o=ch_act;
 			bool init=false;
 			if(ch<0){
 				if(ch_act>-ch) ch_act+=ch;
