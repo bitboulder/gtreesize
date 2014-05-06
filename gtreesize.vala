@@ -97,21 +97,23 @@ namespace Treesize {
 
 	public delegate void CheckFunc();
 	public class Queue {
-		private GLib.HashTable<FileNode,FileNode> hst=new GLib.HashTable<FileNode,FileNode>(null,null);
+		private GLib.HashTable<FileNode,int> hst=new GLib.HashTable<FileNode,int>(null,null);
 		private CheckFunc check;
 		public Queue(CheckFunc _check){ check=_check; }
-		public bool insert(FileNode fn){
+		public bool insert(FileNode fn,int depth=-1){
 			if(hst.contains(fn)) return false;
-			hst.insert(fn,fn);
+			hst.insert(fn,depth);
 			check();
 			return true;
 		}
 		public bool empty(){ return hst.size()==0; }
 		public uint size(){ return hst.size(); }
-		public bool pop(out FileNode fn){
-			fn=null;
+		public bool pop(out FileNode? fn,out int depth){
+			fn=null; depth=0;
 			if(empty()) return false;
-			fn=hst.find((k,v)=>{ return true; });
+			FileNode? xfn=null; int xd=-1;
+			hst.find((k,v)=>{ xfn=k; xd=v; return true; });
+			fn=xfn; depth=xd;
 			hst.remove(fn);
 			return true;
 		}
@@ -179,8 +181,9 @@ namespace Treesize {
 			bool tchg=t!=lastupd;
 			lastupd=t;
 			FileNode fn;
+			int depth;
 			if(!upddpl.empty() && (updfile.empty() || tchg))
-				while(upddpl.pop(out fn)){
+				while(upddpl.pop(out fn,out depth)){
 					if(!fn.del){
 						fn=fn.get_prim();
 						FileNode? fn2=fn.get_oth();
@@ -191,7 +194,7 @@ namespace Treesize {
 						}else row_changed(get_path(fn.get_it()),fn.get_it());
 					}
 				}
-			else if(!updfile.empty()) if(updfile.pop(out fn)) fn.updfile();
+			else if(!updfile.empty()) if(updfile.pop(out fn,out depth)) fn.updfile(depth);
 			bool nupdateon=!(updfile.empty() && upddpl.empty());
 			Timer.timer(0,0);
 			if(nupdateon!=updateon) setcur(nupdateon);
@@ -199,8 +202,8 @@ namespace Treesize {
 			return updateon=nupdateon;
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
-		public void updfile_insert(FileNode fn){
-			if(updfile.insert(fn)) fn.on_upd();
+		public void updfile_insert(FileNode fn,int depth=-1){
+			if(updfile.insert(fn,depth)) fn.on_upd();
 		}
 		public void refresh(Gtk.TreeSelection? s){
 			if(s!=null) s.selected_foreach((tm,tp,it)=>{
@@ -353,7 +356,7 @@ namespace Treesize {
 				(mode>>2)%2==1?'r':'-',(mode>>1)%2==1?'w':'-',(mode>>0)%2==1?(ot?'t':'x'):(ot?'T':'-')
 			);
 		}
-		public void updfile(){
+		public void updfile(int depth){
 			if(del) return;
 			int64 nsi=0;
 			Timer.timer(1,-1);
@@ -377,7 +380,7 @@ namespace Treesize {
 						FileNode? fn=ch.lookup(fich.get_name());
 						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
 						else ch.remove(fich.get_name());
-						ft.updfile_insert(fn);
+						if(depth!=0) ft.updfile_insert(fn,depth<0?-1:depth-1);
 						nch.insert(fich.get_name(),fn);
 					}
 					ch.find((fn,fc)=>{ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); return false; });
@@ -387,7 +390,7 @@ namespace Treesize {
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
 					fm=fi.monitor_directory(FileMonitorFlags.NONE,null);
 					fm.changed.connect((file,otherfile,evtype)=>{
-						ft.updfile_insert(this);
+						ft.updfile_insert(this,1);
 					});
 				}
 				Timer.timer(1,2);
