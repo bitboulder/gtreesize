@@ -129,16 +129,34 @@ namespace Treesize {
 		private time_t lastupd=0;
 		private Gtk.FileChooserDialog fc;
 		private bool diff=false;
+		public bool fsys_only=true;
 		public void parser_finished(Gtk.Builder builder){
 			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
 			set_sort_column_id(Col.SSI,Gtk.SortType.DESCENDING);
-			if(args.length<2) seldir();
-			else if(args.length==4 && args[1]=="-d"){
-				adddir(args[2]);
-				adddir(args[3],true);
-			}else for(int i=1;i<args.length;i++) adddir(args[i]);
+			int i;
+			bool _diff=false;
+			for(i=1;true;i++){
+				if(args[i]=="-d") _diff=true;
+				else if(args[i]=="-m") fsys_only=false;
+				else if(args[i]=="-h"){
+					stdout.printf("Usage: gtreesize [-d] [-m] [-h] {DIRS}\n");
+					stdout.printf("         -d (+ 2 DIRS) => diff mode\n");
+					stdout.printf("         -m run over multiple filesystems\n");
+					stdout.printf("         -h show help\n");
+					Posix.exit(1);
+				}else break;
+			}
+			if(_diff){
+				if(args.length!=i+2){
+					stdout.printf("Error: exactly two arguments required for diff mode\n");
+					Posix.exit(1);
+				}
+				adddir(args[i]);
+				adddir(args[i+1],true);
+			}else if(i<args.length) for(;i<args.length;i++) adddir(args[i]);
+			else seldir();
 		}
 		protected void diffdir(){ seldir(true); }
 		protected void seldir(bool _diff=false){
@@ -249,12 +267,14 @@ namespace Treesize {
 		private int           act=0;
 		private uint          ch_act=0;
 		public static uint    nfn=0;
-		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
+		private string        fsys;
+		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false,string _fsys=""){
 			nfn++;
 			fi=File.new_for_path(_fn);
 			ft=_ft;
 			pa=_pa;
 			dsec=_dsec;
+			fsys=_fsys;
 
 			string dfn=fi.get_basename();
 			if(pa!=null) dfn="%s/%s".printf(ft.get_str(pa.it,FileTree.Col.DFN),dfn);
@@ -362,7 +382,7 @@ namespace Treesize {
 			Timer.timer(1,-1);
 			try{
 				GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
-				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE,flags,null);
+				FileInfo i=fi.query_info(FileAttribute.STANDARD_ALLOCATED_SIZE+","+FileAttribute.OWNER_USER+","+FileAttribute.OWNER_GROUP+","+FileAttribute.TIME_MODIFIED+","+FileAttribute.UNIX_MODE+","+FileAttribute.STANDARD_SIZE+","+FileAttribute.ID_FILESYSTEM,flags,null);
 				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
 				TimeVal mtime=i.get_modification_time();
 				if(!dsec) ft.set(it,
@@ -371,14 +391,19 @@ namespace Treesize {
 					FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
 					FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
 					FileTree.Col.SIZE, rndsi(i.get_size()));
+				if(ft.fsys_only) fsys=i.get_attribute_string(FileAttribute.ID_FILESYSTEM);
 				Timer.timer(1,0);
 				if(fi.query_file_type(flags,null)==GLib.FileType.DIRECTORY){
-					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME,flags);
+					var en=fi.enumerate_children (FileAttribute.STANDARD_NAME+","+FileAttribute.ID_FILESYSTEM,flags);
 					FileInfo fich;
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					while((fich=en.next_file())!=null){
 						FileNode? fn=ch.lookup(fich.get_name());
-						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
+						if(ft.fsys_only){
+							string _fsys=fich.get_attribute_string(FileAttribute.ID_FILESYSTEM);
+							if(_fsys!=fsys) continue;
+						}
+						if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec,fsys);
 						else ch.remove(fich.get_name());
 						if(depth!=0) ft.updfile_insert(fn,depth<0?-1:depth-1);
 						nch.insert(fich.get_name(),fn);
