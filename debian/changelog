@@ -1,8 +1,16 @@
+gtreesize (1.2.0) unstable; urgency=low
+
+  * many new features including diff mode, restrict to file system,
+    automatic refresh and many more
+  * speed up in disk usage calculation
+
+ -- Frank Duckhorn <git@bitboulder.net>  Wed, 07 May 2014 08:43:32 +0200
+
 gtreesize (1.0.0) unstable; urgency=low
 
   * init
 
- -- Frank Duckhorn <frank@bitboulder.net>  Sat, 07 Dec 2013 18:58:50 +0200
+ -- Frank Duckhorn <git@bitboulder.net>  Sat, 07 Dec 2013 18:58:50 +0200
 
 Local variables:
 mode: debian-changelog
