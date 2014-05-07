@@ -434,7 +434,7 @@ namespace Treesize {
 							nch.insert(fich.get_name(),fn);
 						}
 					}catch(GLib.Error e){ stdout.printf("Error in reading dir %s: %s\n",fi.get_path(),e.message); }
-					ch.find((fn,fc)=>{ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); return false; });
+					ch.find((fn,fc)=>{ if(!fc.del){ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); } return false; });
 					ch=nch;
 				});
 				Timer.timer(1,1);
