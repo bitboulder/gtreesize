@@ -317,12 +317,6 @@ namespace Treesize {
 
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 		}
-		~FileNode(){
-			nfn--;
-			if(pa!=null) pa.updssi(-si);
-			if(doth!=null) doth.doth=null;
-			else ft.remove(ref it);
-		}
 		public FileNode  get_prim(){ return  dsec && doth!=null ? doth : this; }
 		public FileNode  get_sec (){ return !dsec && doth!=null ? doth : this; }
 		public FileNode? get_oth (){ return  doth; }
@@ -444,7 +438,6 @@ namespace Treesize {
 							Debug.debug("kill %s".printf(fc.fi.get_path()));
 							updssi(-fc.ssi);
 							fc.kill();
-							ft.remove(ref fc.it);
 						}
 						return false;
 					});
@@ -464,8 +457,16 @@ namespace Treesize {
 			Debug.debug("updfile end %s".printf(fi.get_path()));
 		}
 		private void kill(){
+			nfn--;
 			del=true;
 			ch.find((fn,fc)=>{ fc.kill(); return false; });
+			if(doth!=null){
+				ft.fns.set(ft.get_str(it,FileTree.Col.DFN),doth);
+				doth.doth=null;
+			}else{
+				ft.fns.remove(ft.get_str(it,FileTree.Col.DFN));
+				ft.remove(ref it);
+			}
 		}
 		public bool get_vis(){ return vis; }
 		public void set_vis(){ vis=true; set_chact(); }
