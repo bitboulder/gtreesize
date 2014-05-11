@@ -22,7 +22,6 @@
  */
 
 namespace Treesize {
-	public static bool verbose = false;
 	static string[] args;
 	public static int main(string[] _args){
 		Gtk.init(ref _args);
@@ -141,7 +140,7 @@ namespace Treesize {
 			for(i=1;true;i++){
 				if(args[i]=="-d") _diff=true;
 				else if(args[i]=="-m") fsys_only=false;
-				else if(args[i]=="-v") verbose=true;
+				else if(args[i]=="-v") Debug.inc_level();
 				else if(args[i]=="-h"){
 					stdout.printf("Usage: gtreesize [-d] [-m] [-v] [-h] {DIRS}\n");
 					stdout.printf("         -d (+ 2 DIRS) => diff mode\n");
@@ -279,6 +278,7 @@ namespace Treesize {
 			pa=_pa;
 			dsec=_dsec;
 
+			Debug.debug("create %s".printf(fi.get_path()));
 			string dfn=fi.get_basename();
 			if(pa!=null) dfn="%s/%s".printf(ft.get_str(pa.it,FileTree.Col.DFN),dfn);
 			doth=ft.fns.lookup(dfn);
@@ -439,7 +439,15 @@ namespace Treesize {
 							nch.insert(fich.get_name(),fn);
 						}
 					}catch(GLib.Error e){ stdout.printf("Error in reading dir %s: %s\n",fi.get_path(),e.message); }
-					ch.find((fn,fc)=>{ if(!fc.del){ updssi(-fc.ssi); fc.kill(); ft.remove(ref fc.it); } return false; });
+					ch.find((fn,fc)=>{
+						if(!fc.del){
+							Debug.debug("kill %s".printf(fc.fi.get_path()));
+							updssi(-fc.ssi);
+							fc.kill();
+							ft.remove(ref fc.it);
+						}
+						return false;
+					});
 					ch=nch;
 				});
 				Timer.timer(1,1);
@@ -478,9 +486,10 @@ namespace Treesize {
 				ch_act+=ch;
 			}else /*ch==0*/ if(vis && ch_act!=0) init=true;
 			if(init){ on_act(); GLib.Timeout.add(500,on_act); }
-			Debug.debug("chact   %s (%i->%u)".printf(fi.get_path(),ch,ch_act));
+			Debug.debug("chact   %s (%2i->%u)".printf(fi.get_path(),ch,ch_act));
 		}
 		private bool on_act(){
+			Debug.debug("onact   %s (    %u)".printf(fi.get_path(),ch_act));
 			if(ch_act==0) return false;
 			ft.set(it,FileTree.Col.ACT,act++);
 			return true;
@@ -525,13 +534,17 @@ namespace Treesize {
 		}
 	}
 	public class Debug {
+		private static int level=0;
 		private static double dfirst=0;
+		public static void inc_level(){ level++; }
 		public static void debug(string msg){
-			Posix.timespec ts;
-			Posix.clock_gettime(Posix.CLOCK_REALTIME,out ts);
-			double t = ts.tv_sec + ts.tv_nsec*1e9;
-			if(dfirst==0) dfirst=t;
-			stdout.printf("%7.3f %s\n",t-dfirst,msg);
+			if(level>0){
+				Posix.timespec ts;
+				Posix.clock_gettime(Posix.CLOCK_REALTIME,out ts);
+				double t = (double)ts.tv_sec + (double)ts.tv_nsec/1e9;
+				if(dfirst==0) dfirst=t;
+				stdout.printf("%7.3f %s\n",t-dfirst,msg);
+			}
 		}
 	}
 }
