@@ -22,6 +22,7 @@
  */
 
 namespace Treesize {
+	public static bool verbose = false;
 	static string[] args;
 	public static int main(string[] _args){
 		Gtk.init(ref _args);
@@ -140,10 +141,12 @@ namespace Treesize {
 			for(i=1;true;i++){
 				if(args[i]=="-d") _diff=true;
 				else if(args[i]=="-m") fsys_only=false;
+				else if(args[i]=="-v") verbose=true;
 				else if(args[i]=="-h"){
-					stdout.printf("Usage: gtreesize [-d] [-m] [-h] {DIRS}\n");
+					stdout.printf("Usage: gtreesize [-d] [-m] [-v] [-h] {DIRS}\n");
 					stdout.printf("         -d (+ 2 DIRS) => diff mode\n");
 					stdout.printf("         -m run over multiple filesystems\n");
+					stdout.printf("         -v verbose mode\n");
 					stdout.printf("         -h show help\n");
 					Posix.exit(1);
 				}else break;
@@ -388,6 +391,7 @@ namespace Treesize {
 			FileAttribute.ID_FILESYSTEM;
 		private void updinfo(FileInfo? i){
 			int64 nsi=0;
+			Debug.debug("updinfo %s".printf(fi.get_path()));
 			if(i!=null){
 				ftype=i.get_file_type();
 				TimeVal mtime=i.get_modification_time();
@@ -405,6 +409,7 @@ namespace Treesize {
 		}
 		public void updfile(int depth){
 			if(del) return;
+			Debug.debug("updfile start %s (depth %i)".printf(fi.get_path(),depth));
 			Timer.timer(1,-1);
 			GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
 			if(ftype==FileType.UNKNOWN){
@@ -448,6 +453,7 @@ namespace Treesize {
 			Timer.timer(1,2);
 			set_chact(-1);
 			Timer.timer(1,3);
+			Debug.debug("updfile end %s".printf(fi.get_path()));
 		}
 		private void kill(){
 			del=true;
@@ -472,13 +478,17 @@ namespace Treesize {
 				ch_act+=ch;
 			}else /*ch==0*/ if(vis && ch_act!=0) init=true;
 			if(init){ on_act(); GLib.Timeout.add(500,on_act); }
+			Debug.debug("chact   %s (%i->%u)".printf(fi.get_path(),ch,ch_act));
 		}
 		private bool on_act(){
 			if(ch_act==0) return false;
 			ft.set(it,FileTree.Col.ACT,act++);
 			return true;
 		}
-		public void on_upd(){ set_chact(1); }
+		public void on_upd(){
+			Debug.debug("on_upd %s".printf(fi.get_path()));
+			set_chact(1);
+		}
 	}
 	public class ProgressBar : Gtk.ProgressBar, Gtk.Buildable {
 		private FileTree ft;
@@ -512,6 +522,16 @@ namespace Treesize {
 				stdout.printf("\n");
 			}
 			tsl[x]=ts;
+		}
+	}
+	public class Debug {
+		private static double dfirst=0;
+		public static void debug(string msg){
+			Posix.timespec ts;
+			Posix.clock_gettime(Posix.CLOCK_REALTIME,out ts);
+			double t = ts.tv_sec + ts.tv_nsec*1e9;
+			if(dfirst==0) dfirst=t;
+			stdout.printf("%7.3f %s\n",t-dfirst,msg);
 		}
 	}
 }
