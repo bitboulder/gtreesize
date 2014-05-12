@@ -100,9 +100,14 @@ namespace Treesize {
 		private GLib.HashTable<FileNode,int> hst=new GLib.HashTable<FileNode,int>(null,null);
 		private CheckFunc check;
 		public Queue(CheckFunc _check){ check=_check; }
-		public bool insert(FileNode fn,int depth=-1){
-			if(hst.contains(fn)) return false;
-			hst.insert(fn,depth);
+		public bool insert(FileNode fn,int _depth=-1){
+			int depth;
+			if(hst.lookup_extended(fn,null,out depth)){
+				if(depth>=0 && (_depth<0 ||_depth>depth))
+					hst.set(fn,_depth);
+				return false;
+			}
+			hst.insert(fn,_depth);
 			check();
 			return true;
 		}
@@ -436,10 +441,13 @@ namespace Treesize {
 								string _fsys=fich.get_attribute_string(FileAttribute.ID_FILESYSTEM);
 								if(_fsys!=fsys) continue;
 							}
-							if(fn==null) fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
-							else ch.remove(fich.get_name());
+							int _depth=depth<0?-1:depth-1;
+							if(fn==null){
+								_depth=-1;
+								fn=new FileNode(fi.get_path()+"/"+fich.get_name(),ft,this,dsec);
+							}else ch.remove(fich.get_name());
 							fn.updinfo(fich);
-							if(depth!=0) ft.updfile_insert(fn,depth<0?-1:depth-1);
+							if(depth!=0) ft.updfile_insert(fn,_depth);
 							nch.insert(fich.get_name(),fn);
 						}
 					}catch(GLib.Error e){ stdout.printf("Error in reading dir %s: %s\n",fi.get_path(),e.message); }
