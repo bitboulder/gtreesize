@@ -140,12 +140,16 @@ namespace Treesize {
 			for(i=1;true;i++){
 				if(args[i]=="-d") _diff=true;
 				else if(args[i]=="-m") fsys_only=false;
+				#if DEBUG
 				else if(args[i]=="-v") Debug.inc_level();
+				#endif
 				else if(args[i]=="-h"){
-					stdout.printf("Usage: gtreesize [-d] [-m] [-v] [-h] {DIRS}\n");
+					stdout.printf("Usage: gtreesize [-d] [-m] [-h] {DIRS}\n");
 					stdout.printf("         -d (+ 2 DIRS) => diff mode\n");
 					stdout.printf("         -m run over multiple filesystems\n");
+					#if DEBUG
 					stdout.printf("         -v verbose mode\n");
+					#endif
 					stdout.printf("         -h show help\n");
 					Posix.exit(1);
 				}else break;
@@ -278,7 +282,9 @@ namespace Treesize {
 			pa=_pa;
 			dsec=_dsec;
 
+			#if DEBUG
 			Debug.debug("create %s".printf(fi.get_path()));
+			#endif
 			string dfn=fi.get_basename();
 			if(pa!=null) dfn="%s/%s".printf(ft.get_str(pa.it,FileTree.Col.DFN),dfn);
 			doth=ft.fns.lookup(dfn);
@@ -385,7 +391,9 @@ namespace Treesize {
 			FileAttribute.ID_FILESYSTEM;
 		private void updinfo(FileInfo? i){
 			int64 nsi=0;
+			#if DEBUG
 			Debug.debug("updinfo %s".printf(fi.get_path()));
+			#endif
 			if(i!=null){
 				ftype=i.get_file_type();
 				TimeVal mtime=i.get_modification_time();
@@ -403,7 +411,9 @@ namespace Treesize {
 		}
 		public void updfile(int depth){
 			if(del) return;
+			#if DEBUG
 			Debug.debug("updfile start %s (depth %i)".printf(fi.get_path(),depth));
+			#endif
 			Timer.timer(1,-1);
 			GLib.FileQueryInfoFlags flags = pa==null ? GLib.FileQueryInfoFlags.NONE : GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS;
 			if(ftype==FileType.UNKNOWN){
@@ -435,7 +445,9 @@ namespace Treesize {
 					}catch(GLib.Error e){ stdout.printf("Error in reading dir %s: %s\n",fi.get_path(),e.message); }
 					ch.find((fn,fc)=>{
 						if(!fc.del){
+							#if DEBUG
 							Debug.debug("kill %s".printf(fc.fi.get_path()));
+							#endif
 							updssi(-fc.ssi);
 							fc.kill();
 						}
@@ -454,7 +466,9 @@ namespace Treesize {
 			Timer.timer(1,2);
 			set_chact(-1);
 			Timer.timer(1,3);
+			#if DEBUG
 			Debug.debug("updfile end %s".printf(fi.get_path()));
+			#endif
 		}
 		private void kill(){
 			nfn--;
@@ -487,16 +501,22 @@ namespace Treesize {
 				ch_act+=ch;
 			}else /*ch==0*/ if(vis && ch_act!=0) init=true;
 			if(init){ on_act(); GLib.Timeout.add(500,on_act); }
+			#if DEBUG
 			Debug.debug("chact   %s (%2i->%u)".printf(fi.get_path(),ch,ch_act));
+			#endif
 		}
 		private bool on_act(){
+			#if DEBUG
 			Debug.debug("onact   %s (    %u)".printf(fi.get_path(),ch_act));
+			#endif
 			if(ch_act==0) return false;
 			ft.set(it,FileTree.Col.ACT,act++);
 			return true;
 		}
 		public void on_upd(){
+			#if DEBUG
 			Debug.debug("on_upd %s".printf(fi.get_path()));
+			#endif
 			set_chact(1);
 		}
 	}
@@ -534,6 +554,7 @@ namespace Treesize {
 			tsl[x]=ts;
 		}
 	}
+	#if DEBUG
 	public class Debug {
 		private static int level=0;
 		private static double dfirst=0;
@@ -548,4 +569,5 @@ namespace Treesize {
 			}
 		}
 	}
+	#endif
 }

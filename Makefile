@@ -18,12 +18,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
+	
 VFLAGS=--pkg gtk+-3.0 --pkg posix
-CFLAGS=-O2 -Wall -Wno-unused -g -c `pkg-config --cflags gtk+-3.0`
+CFLAGS=-Wall -Wno-unused -c `pkg-config --cflags gtk+-3.0`
 LFLAGS=`pkg-config --libs gtk+-3.0` -rdynamic
 
+ifeq ($(MAKECMDGOALS),DEBUG)
+  VFLAGS+=-D DEBUG
+  CFLAGS+=-g
+else
+  CFLAGS+=-O2
+endif
+
 all: gtreesize
+DEBUG: gtreesize
 
 clean:
 	rm -f gtreesize *.c *.o
