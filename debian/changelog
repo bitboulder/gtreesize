@@ -1,3 +1,9 @@
+gtreesize (1.2.1) unstable; urgency=low
+
+  * some bug fixes
+
+ -- Frank Duckhorn <git@bitboulder.net>  Mon, 12 May 2014 08:43:32 +0200
+
 gtreesize (1.2.0) unstable; urgency=low
 
   * many new features including diff mode, restrict to file system,
