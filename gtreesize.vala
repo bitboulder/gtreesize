@@ -430,7 +430,7 @@ namespace Treesize {
 			}
 			Timer.timer(1,0);
 			if(ftype==GLib.FileType.DIRECTORY){
-				fi.enumerate_children_async.begin(file_attr,flags,Priority.DEFAULT,null,(obj,res)=>{
+				fi.enumerate_children_async.begin(file_attr,GLib.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,Priority.DEFAULT,null,(obj,res)=>{
 					GLib.HashTable<string,FileNode> nch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
 					try{
 						var en=fi.enumerate_children_async.end(res);
