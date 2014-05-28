@@ -149,13 +149,14 @@ namespace Treesize {
 				else if(args[i]=="-v") Debug.inc_level();
 				#endif
 				else if(args[i]=="-h"){
-					stdout.printf("Usage: gtreesize [-d] [-m] [-h] {DIRS}\n");
+					stdout.printf("Usage: gtreesize [-d] [-m] [-h] {DIRS|FINDFILES}\n");
 					stdout.printf("         -d (+ 2 DIRS) => diff mode\n");
 					stdout.printf("         -m run over multiple filesystems\n");
 					#if DEBUG
 					stdout.printf("         -v verbose mode\n");
 					#endif
 					stdout.printf("         -h show help\n");
+					stdout.printf("         FINDFILES output of: find -printf \"%%k %%p\\n\"\n");
 					Posix.exit(1);
 				}else break;
 			}
@@ -175,7 +176,9 @@ namespace Treesize {
 			fc.hide();
 		}
 		public void adddir(string dirname,bool _diff=false){
-			updfile_insert(new FileNode(dirname,this,null,_diff));
+			var fi=File.new_for_path(dirname);
+			if(fi.query_file_type(FileQueryInfoFlags.NONE)==FileType.REGULAR) read_find(dirname,_diff);
+			else updfile_insert(new FileNode(dirname,this,null,_diff));
 			if(_diff) diff=true;
 		}
 		private bool it2fn(Gtk.TreeIter it,out FileNode? fn){
@@ -232,7 +235,7 @@ namespace Treesize {
 		}
 		public void updcheck(){ if(!updateon) GLib.Idle.add(update); }
 		public void updfile_insert(FileNode fn,int depth=-1){
-			if(updfile.insert(fn,depth)) fn.on_upd();
+			if(!fn.is_fix() && updfile.insert(fn,depth)) fn.on_upd();
 		}
 		public void refresh(Gtk.TreeSelection? s){
 			if(s!=null) s.selected_foreach((tm,tp,it)=>{
@@ -259,6 +262,27 @@ namespace Treesize {
 			Posix.system(_cmd+" \""+fn+"\""+"\n");
 		}
 		public uint get_nupdfile(){ return updfile.size(); }
+		private void read_find(string fn,bool _diff=false){
+			var hpa=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
+			var fi=File.new_for_path(fn);
+			try{
+				var dis=new DataInputStream(fi.read());
+				string line;
+				while((line=dis.read_line(null))!=null){
+					int px=line.index_of(" ");
+					if(px>=0){
+						int64 si; si=int64.parse(line.substring(0,px))*1024;
+						string name=line.substring(px+1);
+						string dn=name.substring(0,name.last_index_of("/"));
+						FileNode? pa;
+						if(!hpa.lookup_extended(dn,null,out pa)) pa=null;
+						hpa.set(name,new FileNode("%s/%s".printf(fn,name),this,pa,_diff,si));
+					}
+				}
+			}catch(Error e){
+				stdout.printf("Error: in file mode init: %s\n",e.message);
+			}
+		}
 	}
 
 	public class FileNode {
@@ -274,13 +298,14 @@ namespace Treesize {
 		private bool          vis=false;
 		public  bool          del=false;
 		private bool          dsec=false;
+		private bool          fix=false;
 		private FileNode?     doth=null;
 		private int           act=0;
 		private uint          ch_act=0;
 		public static uint    nfn=0;
 		private string        fsys;
 		private GLib.FileType ftype=FileType.UNKNOWN;
-		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false){
+		public FileNode(string _fn,FileTree _ft,FileNode? _pa=null,bool _dsec=false,int64 fix_si=-1){
 			nfn++;
 			fi=File.new_for_path(_fn);
 			ft=_ft;
@@ -327,6 +352,12 @@ namespace Treesize {
 			}
 
 			ch=new GLib.HashTable<string,FileNode>(str_hash,str_equal);
+
+			if(fix_si>=0){
+				fix=true;
+				updssi(fix_si-si);
+				si=fix_si;
+			}
 		}
 		public FileNode  get_prim(){ return  dsec && doth!=null ? doth : this; }
 		public FileNode  get_sec (){ return !dsec && doth!=null ? doth : this; }
@@ -334,6 +365,7 @@ namespace Treesize {
 		public Gtk.TreeIter get_it(){ return it; }
 		public int64 get_ssi(){ return ssi; }
 		public bool get_ssichg(){ bool ret=ssichg; ssichg=false; return ret; }
+		public bool is_fix(){ return fix; }
 		public string rnd_ssi(){
 			if(doth==null) return rndsi(ssi);
 			return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi,true));
