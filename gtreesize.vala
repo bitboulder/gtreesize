@@ -135,6 +135,7 @@ namespace Treesize {
 		private Gtk.FileChooserDialog fc;
 		private bool diff=false;
 		public bool fsys_only=true;
+		public bool isdiff(){ return diff; }
 		public void parser_finished(Gtk.Builder builder){
 			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			upddpl=new Queue(updcheck);
@@ -329,7 +330,7 @@ namespace Treesize {
 					string dfn2=ft.get_str(dit,FileTree.Col.DFN);
 					doth=ft.fns.lookup(dfn2);
 					if(doth!=null){
-						ft.set(doth.it,FileTree.Col.BN,"%s (%s)".printf(dfn,dfn2));
+						ft.set(doth.it,FileTree.Col.BN,"%s (%s)".printf(dfn2,dfn));
 						dfn=dfn2;
 					}
 				}
@@ -367,8 +368,10 @@ namespace Treesize {
 		public bool get_ssichg(){ bool ret=ssichg; ssichg=false; return ret; }
 		public bool is_fix(){ return fix; }
 		public string rnd_ssi(){
-			if(doth==null) return rndsi(ssi);
-			return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi,true));
+			if(!ft.isdiff()) return "%s".printf(rndsi(ssi));
+			if(doth!=null) return "%s (%s)".printf(rndsi(ssi),rndsi(doth.ssi-ssi,true));
+			if(dsec) return "# (%s)".printf(rndsi(ssi,true));
+			return "%s (#)".printf(rndsi(ssi));
 		}
 		public int rnd_spi(){
 			int64 ps=ssi,s=ssi;
