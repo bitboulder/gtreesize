@@ -9,11 +9,13 @@
 			<column type="gint"/>       <!--  4: virtual: spi (percentage size) -->
 			<column type="gint"/>       <!--  5: virtual: act (active)          -->
 			<column type="gchararray"/> <!--  6: basename -->
-			<column type="gchararray"/> <!--  7: mtime    -->
+			<column type="gchararray"/> <!--  7: rmtime   -->
 			<column type="gchararray"/> <!--  8: mode     -->
 			<column type="gchararray"/> <!--  9: user     -->
 			<column type="gchararray"/> <!-- 10: group    -->
-			<column type="gchararray"/> <!-- 11: size     -->
+			<column type="gchararray"/> <!-- 11: rsize    -->
+			<column type="gint"/>       <!-- 12: mtime    -->
+			<column type="gint64"/>     <!-- 13: size     -->
 		</columns>
 		<signal name="setcur" handler="treesize_treesize_on_setcur" swapped="yes"/>
 	</object>
@@ -80,6 +82,57 @@
 				<property name="always_show_image">True</property>
 				<signal name="activate" handler="treesize_file_tree_diffdir" swapped="yes" object="filetree"/>
 				<accelerator key="d" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+			</object>
+		</child>
+		<child>
+			<object class="GtkMenuItem" id="menu-sort">
+				<property name="label">Sort</property>
+        		<property name="visible">True</property>
+				<property name="can_focus">False</property>
+				<child type="submenu">
+					<object class="GtkMenu">
+						<child>
+							<object class="GtkImageMenuItem" id="menu-sort-ssi">
+								<property name="label">Space usage</property>
+								<property name="visible">True</property>
+								<property name="can_focus">False</property>
+								<property name="use_stock">True</property>
+								<property name="always_show_image">True</property>
+								<signal name="activate" handler="treesize_file_tree_sortssi" swapped="yes" object="filetree"/>
+							</object>
+						</child>
+						<child>
+							<object class="GtkImageMenuItem" id="menu-sort-fn">
+								<property name="label">File name</property>
+								<property name="visible">True</property>
+								<property name="can_focus">False</property>
+								<property name="use_stock">True</property>
+								<property name="always_show_image">True</property>
+								<signal name="activate" handler="treesize_file_tree_sortfn" swapped="yes" object="filetree"/>
+							</object>
+						</child>
+						<child>
+							<object class="GtkImageMenuItem" id="menu-sort-mtime">
+								<property name="label">Date</property>
+								<property name="visible">True</property>
+								<property name="can_focus">False</property>
+								<property name="use_stock">True</property>
+								<property name="always_show_image">True</property>
+								<signal name="activate" handler="treesize_file_tree_sortmtime" swapped="yes" object="filetree"/>
+							</object>
+						</child>
+						<child>
+							<object class="GtkImageMenuItem" id="menu-sort-size">
+								<property name="label">File size</property>
+								<property name="visible">True</property>
+								<property name="can_focus">False</property>
+								<property name="use_stock">True</property>
+								<property name="always_show_image">True</property>
+								<signal name="activate" handler="treesize_file_tree_sortsize" swapped="yes" object="filetree"/>
+							</object>
+						</child>
+					</object>
+				</child>
 			</object>
 		</child>
 		<child>

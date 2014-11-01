@@ -125,7 +125,7 @@ namespace Treesize {
 	}
 
 	public class FileTree : Gtk.TreeStore, Gtk.TreeModel, Gtk.Buildable {
-		public enum Col { FN,DFN,SSI,RSSI,RSPI,ACT,BN,MTIME,MODE,USER,GROUP,SIZE,NUM }
+		public enum Col { FN,DFN,SSI,RSSI,RSPI,ACT,BN,RMTIME,MODE,USER,GROUP,RSIZE,MTIME,SIZE,NUM }
 		public signal void setcur(bool wait);
 		public Queue upddpl;
 		private Queue updfile;
@@ -140,7 +140,7 @@ namespace Treesize {
 			fc=builder.get_object("fc") as Gtk.FileChooserDialog;
 			upddpl=new Queue(updcheck);
 			updfile=new Queue(updcheck);
-			set_sort_column_id(Col.SSI,Gtk.SortType.DESCENDING);
+			sort(Col.SSI,1);
 			int i;
 			bool _diff=false;
 			for(i=1;true;i++){
@@ -172,6 +172,20 @@ namespace Treesize {
 			else seldir();
 		}
 		protected void diffdir(){ seldir(true); }
+		private void sort(Col col,int dir){
+			if(dir<0){
+				int ocol=Col.SSI;
+				Gtk.SortType odir=Gtk.SortType.DESCENDING;
+				if(get_sort_column_id(out ocol,out odir) && ocol==col)
+					dir=odir==Gtk.SortType.ASCENDING?1:0;
+				else dir=0;
+			}
+			set_sort_column_id(col,dir==1?Gtk.SortType.DESCENDING:Gtk.SortType.ASCENDING);
+		}
+		protected void sortssi  (){ sort(Col.SSI  ,-1); }
+		protected void sortfn   (){ sort(Col.FN   ,-1); }
+		protected void sortmtime(){ sort(Col.MTIME,-1); }
+		protected void sortsize (){ sort(Col.SIZE ,-1); }
 		protected void seldir(bool _diff=false){
 			if(fc.run()==Gtk.ResponseType.ACCEPT) adddir(fc.get_filename(),_diff);
 			fc.hide();
@@ -438,11 +452,13 @@ namespace Treesize {
 				ftype=i.get_file_type();
 				TimeVal mtime=i.get_modification_time();
 				if(!dsec) ft.set(it,
-					FileTree.Col.MTIME,rndtime(mtime),
-					FileTree.Col.MODE, rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
-					FileTree.Col.USER, i.get_attribute_string(FileAttribute.OWNER_USER),
-					FileTree.Col.GROUP,i.get_attribute_string(FileAttribute.OWNER_GROUP),
-					FileTree.Col.SIZE, rndsi(i.get_size()));
+					FileTree.Col.RMTIME,rndtime(mtime),
+					FileTree.Col.MODE,  rndmode(i.get_attribute_uint32(FileAttribute.UNIX_MODE)),
+					FileTree.Col.USER,  i.get_attribute_string(FileAttribute.OWNER_USER),
+					FileTree.Col.GROUP, i.get_attribute_string(FileAttribute.OWNER_GROUP),
+					FileTree.Col.RSIZE, rndsi(i.get_size()),
+					FileTree.Col.MTIME, mtime.tv_sec,
+					FileTree.Col.SIZE,  i.get_size());
 				if(ft.fsys_only) fsys=i.get_attribute_string(FileAttribute.ID_FILESYSTEM);
 				nsi=(int64)i.get_attribute_uint64(FileAttribute.STANDARD_ALLOCATED_SIZE);
 			}
