@@ -178,7 +178,7 @@ namespace Treesize {
 				Gtk.SortType odir=Gtk.SortType.DESCENDING;
 				if(get_sort_column_id(out ocol,out odir) && ocol==col)
 					dir=odir==Gtk.SortType.ASCENDING?1:0;
-				else dir=0;
+				else dir = col==Col.SSI || col==Col.SIZE ? 1 : 0;
 			}
 			set_sort_column_id(col,dir==1?Gtk.SortType.DESCENDING:Gtk.SortType.ASCENDING);
 		}

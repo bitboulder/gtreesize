@@ -85,49 +85,45 @@
 			</object>
 		</child>
 		<child>
-			<object class="GtkMenuItem" id="menu-sort">
+			<object class="GtkImageMenuItem" id="menu-sort">
 				<property name="label">Sort</property>
         		<property name="visible">True</property>
 				<property name="can_focus">False</property>
 				<child type="submenu">
 					<object class="GtkMenu">
 						<child>
-							<object class="GtkImageMenuItem" id="menu-sort-ssi">
+							<object class="GtkRadioMenuItem" id="menu-sort-ssi">
 								<property name="label">Space usage</property>
 								<property name="visible">True</property>
 								<property name="can_focus">False</property>
-								<property name="use_stock">True</property>
-								<property name="always_show_image">True</property>
+								<property name="active">True</property>
 								<signal name="activate" handler="treesize_file_tree_sortssi" swapped="yes" object="filetree"/>
 							</object>
 						</child>
 						<child>
-							<object class="GtkImageMenuItem" id="menu-sort-fn">
+							<object class="GtkRadioMenuItem" id="menu-sort-fn">
 								<property name="label">File name</property>
 								<property name="visible">True</property>
 								<property name="can_focus">False</property>
-								<property name="use_stock">True</property>
-								<property name="always_show_image">True</property>
+								<property name="group">menu-sort-ssi</property>
 								<signal name="activate" handler="treesize_file_tree_sortfn" swapped="yes" object="filetree"/>
 							</object>
 						</child>
 						<child>
-							<object class="GtkImageMenuItem" id="menu-sort-mtime">
+							<object class="GtkRadioMenuItem" id="menu-sort-mtime">
 								<property name="label">Date</property>
 								<property name="visible">True</property>
 								<property name="can_focus">False</property>
-								<property name="use_stock">True</property>
-								<property name="always_show_image">True</property>
+								<property name="group">menu-sort-ssi</property>
 								<signal name="activate" handler="treesize_file_tree_sortmtime" swapped="yes" object="filetree"/>
 							</object>
 						</child>
 						<child>
-							<object class="GtkImageMenuItem" id="menu-sort-size">
+							<object class="GtkRadioMenuItem" id="menu-sort-size">
 								<property name="label">File size</property>
 								<property name="visible">True</property>
 								<property name="can_focus">False</property>
-								<property name="use_stock">True</property>
-								<property name="always_show_image">True</property>
+								<property name="group">menu-sort-ssi</property>
 								<signal name="activate" handler="treesize_file_tree_sortsize" swapped="yes" object="filetree"/>
 							</object>
 						</child>
