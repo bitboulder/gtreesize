@@ -20,7 +20,7 @@
 # THE SOFTWARE.
 	
 VFLAGS=--pkg gtk+-3.0 --pkg posix
-CFLAGS=-Wall -Wno-unused -c `pkg-config --cflags gtk+-3.0`
+CFLAGS=-Wall -Wno-unused -c `pkg-config --cflags gtk+-3.0` -fPIC
 LFLAGS=`pkg-config --libs gtk+-3.0` -rdynamic
 
 ifeq ($(MAKECMDGOALS),DEBUG)

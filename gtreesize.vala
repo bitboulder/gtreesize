@@ -515,12 +515,12 @@ namespace Treesize {
 					ch=nch;
 				});
 				Timer.timer(1,1);
-				try{
+/*				try{
 					fm=fi.monitor_directory(FileMonitorFlags.NONE,null);
 					fm.changed.connect((file,otherfile,evtype)=>{
 						ft.updfile_insert(this,1);
 					});
-				}catch(GLib.IOError e){ stdout.printf("Error monitor dir %s: %s",fi.get_path(),e.message); }
+				}catch(GLib.IOError e){ stdout.printf("Error monitor dir %s: %s",fi.get_path(),e.message); }*/
 			}
 			Timer.timer(1,2);
 			set_chact(-1);
